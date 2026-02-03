@@ -1,5 +1,6 @@
 import SlideWrapper from './SlideWrapper'
 import { slidesData } from '../../data/slides'
+import PenMark from '../ui/PenMark'
 
 const ClosingSlide = () => {
   // 마지막 슬라이드 (closing 타입) 찾기
@@ -42,9 +43,10 @@ const ClosingSlide = () => {
           {data.footer}
         </p>
 
-        {/* 慶應義塾大学 로고/텍스트 */}
-        <div data-animate className="mt-16 opacity-60">
-          <p className="text-2xl md:text-3xl font-display tracking-widest">
+        {/* 慶應義塾大学 로고 및 텍스트 */}
+        <div data-animate className="mt-16 flex flex-col items-center">
+          <PenMark size={60} color="#FFD700" className="mb-4 opacity-70" />
+          <p className="text-2xl md:text-3xl font-display tracking-widest opacity-60">
             慶應義塾大学
           </p>
           <p className="text-lg text-white/50 mt-2">

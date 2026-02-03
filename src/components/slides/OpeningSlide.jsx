@@ -1,5 +1,6 @@
 import SlideWrapper from './SlideWrapper'
 import { slidesData } from '../../data/slides'
+import PenMark from '../ui/PenMark'
 
 const OpeningSlide = () => {
   const data = slidesData[0]
@@ -7,6 +8,11 @@ const OpeningSlide = () => {
   return (
     <SlideWrapper index={0}>
       <div className="text-center w-full px-4">
+        {/* 펜마크 로고 */}
+        <div data-animate className="flex justify-center mb-8">
+          <PenMark size={100} color="#FFD700" className="drop-shadow-lg" />
+        </div>
+
         {/* 메인 타이틀 */}
         <h1
           data-animate

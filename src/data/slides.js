@@ -17,7 +17,7 @@ export const slidesData = [
     id: 'opening-speech',
     type: 'speech',
     title: '開会の辞',
-    speaker: '司会者名',
+    speaker: '李錫容（イ・ソクヨン）',
     message: '皆様、本日は韓国・ソウル三田会合同新年会に\nお集まりいただき、誠にありがとうございます。',
     notes: '개회사입니다. 사회자가 행사 시작을 알립니다.',
   },

@@ -1,12 +1,13 @@
 import SlideWrapper from './SlideWrapper'
+import PenMark from '../ui/PenMark'
 
 const SongSlide = ({ index, data }) => {
   return (
     <SlideWrapper index={index}>
       <div className="text-center max-w-4xl">
-        {/* 음표 아이콘 */}
-        <div data-animate className="text-6xl mb-6 animate-pulse">
-          🎵
+        {/* 펜마크 로고 */}
+        <div data-animate className="flex justify-center mb-6">
+          <PenMark size={80} color="#FFD700" className="animate-pulse" />
         </div>
 
         {/* 타이틀 */}

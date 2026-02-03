@@ -5,6 +5,7 @@ import { slidesData } from '../data/slides'
 
 // 이펙트 컴포넌트
 import GradientBackground from '../components/effects/GradientBackground'
+import TricolorBackground from '../components/effects/TricolorBackground'
 import ParticleBackground from '../components/effects/ParticleBackground'
 import Fireworks from '../components/effects/Fireworks'
 import MouseFollower from '../components/effects/MouseFollower'
@@ -38,7 +39,8 @@ const AudienceView = () => {
   const { currentSlide } = usePresentationStore()
 
   // 슬라이드별 이펙트 설정
-  const showFireworks = currentSlide === 0 || currentSlide === 9 || currentSlide === 11 // 오프닝, 와카키치, 폐회
+  const isOpeningSlide = currentSlide === 0
+  const showFireworks = currentSlide === 9 || currentSlide === 11 // 와카키치, 폐회 (첫 페이지 제외)
   const gradientVariant = currentSlide === 6 ? 'gold' : currentSlide === 11 ? 'celebration' : 'default'
 
   // 슬라이드 타입에 따른 컴포넌트 렌더링
@@ -72,8 +74,13 @@ const AudienceView = () => {
   return (
     <div className="w-screen h-screen overflow-hidden relative">
       {/* 배경 이펙트 */}
-      <GradientBackground variant={gradientVariant} />
-      <ParticleBackground particleCount={40} />
+      {isOpeningSlide ? (
+        <TricolorBackground active={true} />
+      ) : (
+        <GradientBackground variant={gradientVariant} />
+      )}
+
+      {!isOpeningSlide && <ParticleBackground particleCount={40} />}
       <Fireworks active={showFireworks} intensity="medium" />
       <MouseFollower enabled={true} />
 
