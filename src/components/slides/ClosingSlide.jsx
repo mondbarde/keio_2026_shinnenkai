@@ -9,11 +9,12 @@ const ClosingSlide = () => {
 
   return (
     <SlideWrapper index={closingIndex}>
-      <div className="text-center max-w-4xl">
-        {/* 메인 타이틀 */}
+      <div className="text-center w-full flex flex-col items-center">
+        {/* 메인 타이틀 - 전체 너비 사용 */}
         <h1
           data-animate
-          className="text-5xl md:text-7xl lg:text-8xl font-display font-bold mb-12 text-glow"
+          className="font-display font-bold mb-12 text-glow whitespace-nowrap"
+          style={{ fontSize: 'clamp(1.5rem, 6vw, 5rem)' }}
         >
           {data.title}
         </h1>
@@ -21,7 +22,7 @@ const ClosingSlide = () => {
         {/* 감사 메시지 */}
         <p
           data-animate
-          className="text-xl md:text-2xl lg:text-3xl text-white/90 font-light leading-relaxed mb-12 whitespace-pre-line"
+          className="text-xl md:text-2xl lg:text-3xl text-white/90 font-light leading-relaxed mb-12 whitespace-pre-line max-w-4xl px-4"
         >
           {data.message}
         </p>
@@ -38,7 +39,8 @@ const ClosingSlide = () => {
         {/* 새해 인사 */}
         <p
           data-animate
-          className="text-lg md:text-xl text-keio-yellow font-display"
+          className="text-lg md:text-xl text-keio-yellow font-display whitespace-nowrap px-4"
+          style={{ fontSize: 'clamp(0.875rem, 3vw, 1.25rem)' }}
         >
           {data.footer}
         </p>
