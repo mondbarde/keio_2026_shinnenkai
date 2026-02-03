@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import SlideWrapper from './SlideWrapper'
 import { slidesData } from '../../data/slides'
 import PenMark from '../ui/PenMark'
@@ -192,13 +192,18 @@ const extractVideosFromYtData = (ytData) => {
   return videos
 }
 
-// 기본 플레이리스트 (작동 확인된 것만)
+// 기본 플레이리스트 URL
+const DEFAULT_PLAYLIST_URL = 'https://www.youtube.com/watch?v=TK1Ij_-mank&list=PLXSVa_yr70xkt3U6VMim2P5eDdgBu4wAL'
+const DEFAULT_PLAYLIST_ID = 'PLXSVa_yr70xkt3U6VMim2P5eDdgBu4wAL'
+
+// 초기 플레이리스트 (로딩 전 폴백)
 const defaultPlaylist = [
   {
     id: 1,
-    title: 'Merry-Go-Round of Life',
-    album: 'ハウルの動く城',
-    youtubeId: 'HMGetv40FkI',
+    title: 'YouTube Playlist',
+    album: '読み込み中...',
+    youtubeId: DEFAULT_PLAYLIST_ID,
+    isPlaylistFallback: true,
   },
 ]
 
@@ -209,7 +214,21 @@ const OpeningSlide = () => {
   const [isPlaying, setIsPlaying] = useState(false)
   const [customUrl, setCustomUrl] = useState('')
   const [playlist, setPlaylist] = useState(defaultPlaylist)
+  const [isLoading, setIsLoading] = useState(false)
   const iframeRef = useRef(null)
+
+  // 컴포넌트 마운트 시 기본 플레이리스트 로드
+  useEffect(() => {
+    const loadDefaultPlaylist = async () => {
+      setIsLoading(true)
+      const videos = await fetchPlaylistVideos(DEFAULT_PLAYLIST_ID)
+      if (videos.length > 0) {
+        setPlaylist(videos)
+      }
+      setIsLoading(false)
+    }
+    loadDefaultPlaylist()
+  }, [])
 
   const handlePlayTrack = (idx) => {
     setCurrentTrack(idx)
@@ -232,9 +251,6 @@ const OpeningSlide = () => {
     }
     setPlaylist(playlist.filter((_, i) => i !== idx))
   }
-
-  // 로딩 상태
-  const [isLoading, setIsLoading] = useState(false)
 
   // 커스텀 URL로 바로 재생
   const handlePlayCustom = async () => {

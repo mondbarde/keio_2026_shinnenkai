@@ -42,17 +42,24 @@ const useSlideNavigation = (options = {}) => {
   const handleKeyDown = useCallback((e) => {
     if (isAnimating) return
 
+    // 입력 필드에서는 스페이스/엔터 키 네비게이션 무시
+    const isInputField = e.target.tagName === 'INPUT' ||
+      e.target.tagName === 'TEXTAREA' ||
+      e.target.tagName === 'SELECT' ||
+      e.target.isContentEditable
+
     switch (e.key) {
       case 'ArrowDown':
-      case 'ArrowRight':
-      case ' ':
-      case 'Enter':
       case 'PageDown':
         e.preventDefault()
         nextSlide()
         break
+      case ' ':
+        if (isInputField) return // 입력 필드에서는 무시
+        e.preventDefault()
+        nextSlide()
+        break
       case 'ArrowUp':
-      case 'ArrowLeft':
       case 'PageUp':
         e.preventDefault()
         prevSlide()

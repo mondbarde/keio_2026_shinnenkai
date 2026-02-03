@@ -1,11 +1,12 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import SlideWrapper from './SlideWrapper'
+
+const STORAGE_KEY = 'keio_luckydraw_settings'
 
 // 드럼롤 MP3 사운드 훅
 const useSound = () => {
   const audioRef = useRef(null)
 
-  // 드럼롤 MP3 재생 (4초, 끝에 심벌즈)
   const playDrumRoll = () => {
     if (audioRef.current) {
       audioRef.current.pause()
@@ -16,7 +17,6 @@ const useSound = () => {
     audioRef.current.play().catch(e => console.log('Audio play failed:', e))
   }
 
-  // 사운드 정지
   const stopSound = () => {
     if (audioRef.current) {
       audioRef.current.pause()
@@ -27,9 +27,196 @@ const useSound = () => {
   return { playDrumRoll, stopSound }
 }
 
+// 설정 팝업 컴포넌트
+const SettingsPopup = ({ isOpen, onClose, settings, onSave }) => {
+  const [localSettings, setLocalSettings] = useState(settings)
+
+  useEffect(() => {
+    setLocalSettings(settings)
+  }, [settings, isOpen])
+
+  const handleAddPrize = () => {
+    setLocalSettings(prev => ({
+      ...prev,
+      prizes: [...prev.prizes, { id: Date.now(), name: '', quantity: 1, sponsor: '' }]
+    }))
+  }
+
+  const handleRemovePrize = (id) => {
+    setLocalSettings(prev => ({
+      ...prev,
+      prizes: prev.prizes.filter(p => p.id !== id)
+    }))
+  }
+
+  const handlePrizeChange = (id, field, value) => {
+    setLocalSettings(prev => ({
+      ...prev,
+      prizes: prev.prizes.map(p => p.id === id ? { ...p, [field]: value } : p)
+    }))
+  }
+
+  const handleSave = () => {
+    onSave(localSettings)
+    onClose()
+  }
+
+  if (!isOpen) return null
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* 배경 오버레이 */}
+      <div
+        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+        onClick={onClose}
+      />
+
+      {/* 팝업 내용 */}
+      <div
+        className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto bg-gradient-to-br from-keio-blue-dark to-keio-blue rounded-3xl border border-white/20 shadow-2xl"
+        onWheel={(e) => e.stopPropagation()}
+      >
+        {/* 헤더 */}
+        <div className="sticky top-0 z-10 flex items-center justify-between p-6 border-b border-white/10 bg-keio-blue-dark/90 backdrop-blur-sm rounded-t-3xl">
+          <h3 className="text-2xl font-bold text-white flex items-center gap-2">
+            <span>⚙️</span> 抽選設定
+          </h3>
+          <button
+            onClick={onClose}
+            className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+          >
+            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div className="p-6 space-y-8">
+          {/* 번호 범위 설정 */}
+          <div>
+            <h4 className="text-lg font-medium text-keio-yellow mb-4 flex items-center gap-2">
+              <span>🎫</span> 抽選番号範囲
+            </h4>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <label className="text-white/70">開始:</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={localSettings.minNumber}
+                  onChange={(e) => setLocalSettings(prev => ({ ...prev, minNumber: e.target.value }))}
+                  className="w-24 px-4 py-2 text-lg text-center rounded-lg bg-white/10 border border-white/20 text-white focus:outline-none focus:border-keio-yellow"
+                />
+              </div>
+              <span className="text-white/50">〜</span>
+              <div className="flex items-center gap-2">
+                <label className="text-white/70">終了:</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={localSettings.maxNumber}
+                  onChange={(e) => setLocalSettings(prev => ({ ...prev, maxNumber: e.target.value }))}
+                  className="w-24 px-4 py-2 text-lg text-center rounded-lg bg-white/10 border border-white/20 text-white focus:outline-none focus:border-keio-yellow"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* 상품 테이블 */}
+          <div>
+            <h4 className="text-lg font-medium text-keio-yellow mb-4 flex items-center gap-2">
+              <span>🎁</span> 景品リスト
+            </h4>
+
+            {/* 테이블 헤더 */}
+            <div className="grid grid-cols-[1fr_80px_1fr_40px] gap-2 mb-2 px-2">
+              <span className="text-white/50 text-sm">景品名</span>
+              <span className="text-white/50 text-sm text-center">個数</span>
+              <span className="text-white/50 text-sm">スポンサー名</span>
+              <span></span>
+            </div>
+
+            {/* 상품 목록 */}
+            <div className="space-y-2">
+              {localSettings.prizes.map((prize, idx) => (
+                <div
+                  key={prize.id}
+                  className="grid grid-cols-[1fr_80px_1fr_40px] gap-2 items-center p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
+                >
+                  <input
+                    type="text"
+                    value={prize.name}
+                    onChange={(e) => handlePrizeChange(prize.id, 'name', e.target.value)}
+                    placeholder="例: 特賞"
+                    className="px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/30 focus:outline-none focus:border-keio-yellow text-sm"
+                  />
+                  <input
+                    type="number"
+                    min="1"
+                    value={prize.quantity}
+                    onChange={(e) => handlePrizeChange(prize.id, 'quantity', parseInt(e.target.value) || 1)}
+                    className="px-2 py-2 rounded-lg bg-white/10 border border-white/20 text-white text-center focus:outline-none focus:border-keio-yellow text-sm"
+                  />
+                  <input
+                    type="text"
+                    value={prize.sponsor}
+                    onChange={(e) => handlePrizeChange(prize.id, 'sponsor', e.target.value)}
+                    placeholder="例: 〇〇会社"
+                    className="px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/30 focus:outline-none focus:border-keio-yellow text-sm"
+                  />
+                  <button
+                    onClick={() => handleRemovePrize(prize.id)}
+                    className="w-8 h-8 rounded-full bg-red-500/20 hover:bg-red-500/40 flex items-center justify-center transition-colors"
+                  >
+                    <svg className="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {/* 상품 추가 버튼 */}
+            <button
+              onClick={handleAddPrize}
+              className="mt-3 w-full py-3 rounded-lg border-2 border-dashed border-white/20 text-white/50 hover:border-keio-yellow/50 hover:text-keio-yellow transition-colors flex items-center justify-center gap-2"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              景品を追加
+            </button>
+          </div>
+        </div>
+
+        {/* 푸터 */}
+        <div className="sticky bottom-0 flex gap-4 p-6 border-t border-white/10 bg-keio-blue-dark/90 backdrop-blur-sm rounded-b-3xl">
+          <button
+            onClick={onClose}
+            className="flex-1 py-3 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-colors"
+          >
+            キャンセル
+          </button>
+          <button
+            onClick={handleSave}
+            className="flex-1 py-3 rounded-xl bg-gradient-to-r from-keio-yellow to-yellow-500 text-keio-blue-dark font-bold hover:scale-105 transition-transform"
+          >
+            保存する
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 const PrizeSlide = ({ index, data }) => {
   // 설정 상태
-  const [maxNumber, setMaxNumber] = useState('')
+  const [settings, setSettings] = useState({
+    minNumber: '1',
+    maxNumber: '50',
+    prizes: []
+  })
+  const [showSettings, setShowSettings] = useState(false)
   const [isSetupComplete, setIsSetupComplete] = useState(false)
 
   // 추첨 상태
@@ -39,39 +226,69 @@ const PrizeSlide = ({ index, data }) => {
   const [currentDrawn, setCurrentDrawn] = useState([])
   const [isDrawing, setIsDrawing] = useState(false)
   const [showCelebration, setShowCelebration] = useState(false)
+  const [selectedPrizeId, setSelectedPrizeId] = useState(null)
+  const [currentPrizeName, setCurrentPrizeName] = useState('')
+  const [currentSponsor, setCurrentSponsor] = useState('')
+  const [drawHistory, setDrawHistory] = useState([])
 
   // 애니메이션 상태
   const [rollingNumbers, setRollingNumbers] = useState([])
-  const [rollPhase, setRollPhase] = useState('idle') // idle, fast, slow, reveal
+  const [rollPhase, setRollPhase] = useState('idle')
 
   // 사운드 훅
   const { playDrumRoll, stopSound } = useSound()
 
-  // 설정 완료
-  const handleSetupComplete = () => {
-    const num = parseInt(maxNumber)
-    if (num > 0) {
+  // localStorage에서 설정 로드
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY)
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved)
+        setSettings(parsed)
+        // 설정이 있으면 바로 추첨 화면으로
+        if (parsed.maxNumber && parseInt(parsed.maxNumber) > 0) {
+          setIsSetupComplete(true)
+        }
+      } catch (e) {
+        console.error('Failed to parse saved settings:', e)
+      }
+    }
+  }, [])
+
+  // 설정 저장
+  const handleSaveSettings = (newSettings) => {
+    setSettings(newSettings)
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(newSettings))
+    if (newSettings.maxNumber && parseInt(newSettings.maxNumber) > 0) {
       setIsSetupComplete(true)
     }
   }
 
   // 추첨 가능한 번호 계산
   const getAvailableNumbers = useCallback(() => {
-    const max = parseInt(maxNumber)
-    const all = Array.from({ length: max }, (_, i) => i + 1)
+    const min = parseInt(settings.minNumber) || 1
+    const max = parseInt(settings.maxNumber) || 1
+    const all = Array.from({ length: max - min + 1 }, (_, i) => min + i)
     if (excludeDuplicates) {
       return all.filter(n => !drawnNumbers.includes(n))
     }
     return all
-  }, [maxNumber, drawnNumbers, excludeDuplicates])
+  }, [settings.minNumber, settings.maxNumber, drawnNumbers, excludeDuplicates])
 
-  // 추첨 실행 (4초 드럼롤 MP3에 맞춤)
+  // 남은 상품 목록 (추첨되지 않은 것만)
+  const getAvailablePrizes = useCallback(() => {
+    const drawnPrizeIds = drawHistory.map(h => h.prizeId)
+    return settings.prizes.filter(p => !drawnPrizeIds.includes(p.id))
+  }, [settings.prizes, drawHistory])
+
+  // 추첨 실행
   const handleDraw = () => {
     const available = getAvailableNumbers()
-    const count = Math.min(drawCount, available.length)
+    const selectedPrize = settings.prizes.find(p => p.id === selectedPrizeId)
+    const count = selectedPrize ? Math.min(selectedPrize.quantity, available.length) : Math.min(drawCount, available.length)
 
     if (count === 0) {
-      alert('추첨 가능한 번호가 없습니다!')
+      alert('抽選可能な番号がありません！')
       return
     }
 
@@ -79,53 +296,54 @@ const PrizeSlide = ({ index, data }) => {
     setCurrentDrawn([])
     setShowCelebration(false)
     setRollPhase('fast')
+    setCurrentPrizeName(selectedPrize?.name || '景品')
+    setCurrentSponsor(selectedPrize?.sponsor || '')
 
-    // 드럼롤 MP3 재생 (4초, 끝에 심벌즈)
     playDrumRoll()
 
-    // 실제 당첨 번호 미리 계산
     const shuffled = [...available].sort(() => Math.random() - 0.5)
     const winners = shuffled.slice(0, count)
 
-    const max = parseInt(maxNumber)
+    const max = parseInt(settings.maxNumber) || 1
+    const min = parseInt(settings.minNumber) || 1
     const startTime = Date.now()
-    const totalDuration = 4000 // 4초 (MP3 길이에 맞춤)
+    const totalDuration = 4000
 
     const roll = () => {
       const elapsed = Date.now() - startTime
       const progress = elapsed / totalDuration
 
-      // 랜덤 숫자 롤링
       const randomRolling = Array.from({ length: count }, () =>
-        Math.floor(Math.random() * max) + 1
+        Math.floor(Math.random() * (max - min + 1)) + min
       )
       setRollingNumbers(randomRolling)
 
-      // 진행도에 따른 페이즈 변경
       if (progress < 0.6) {
-        // 빠른 롤링 (0~2.4초)
         setRollPhase('fast')
       } else if (progress < 1) {
-        // 느린 롤링 (2.4~4초)
         setRollPhase('slow')
       }
 
       if (elapsed >= totalDuration) {
-        // 4초에 심벌즈와 함께 결과 발표
         setRollPhase('reveal')
         setCurrentDrawn(winners)
         setDrawnNumbers(prev => [...prev, ...winners])
+        setDrawHistory(prev => [...prev, {
+          prizeId: selectedPrizeId,
+          prizeName: selectedPrize?.name || '景品',
+          sponsor: selectedPrize?.sponsor || '',
+          numbers: winners
+        }])
         setRollingNumbers([])
         setIsDrawing(false)
         setShowCelebration(true)
+        setSelectedPrizeId(null)
 
-        // 축하 효과 3초 후 종료
         setTimeout(() => {
           setShowCelebration(false)
           setRollPhase('idle')
         }, 3000)
       } else {
-        // 진행도에 따라 속도 조절 (점점 느려짐)
         const speed = progress < 0.6 ? 50 : 50 + (progress - 0.6) * 500
         setTimeout(roll, speed)
       }
@@ -134,28 +352,39 @@ const PrizeSlide = ({ index, data }) => {
     roll()
   }
 
-  // 리셋 (설정 화면으로 돌아가기)
+  // 리셋
   const handleReset = () => {
     if (window.confirm('本当に最初からやり直しますか？\n抽選履歴がすべてリセットされます。')) {
       stopSound()
-      setIsSetupComplete(false)
-      setMaxNumber('')
       setDrawnNumbers([])
       setCurrentDrawn([])
       setShowCelebration(false)
       setDrawCount(1)
       setExcludeDuplicates(true)
       setRollPhase('idle')
+      setSelectedPrizeId(null)
+      setCurrentPrizeName('')
+      setCurrentSponsor('')
+      setDrawHistory([])
     }
   }
 
+  const availablePrizes = getAvailablePrizes()
+
   return (
     <SlideWrapper index={index}>
-      <div className="w-full max-w-4xl relative">
+      <div className="w-full max-w-6xl relative">
+        {/* 설정 팝업 */}
+        <SettingsPopup
+          isOpen={showSettings}
+          onClose={() => setShowSettings(false)}
+          settings={settings}
+          onSave={handleSaveSettings}
+        />
+
         {/* 축하 효과 오버레이 */}
         {showCelebration && (
           <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
-            {/* 색종이 효과 */}
             {Array.from({ length: 50 }).map((_, i) => (
               <div
                 key={i}
@@ -171,7 +400,6 @@ const PrizeSlide = ({ index, data }) => {
                 }}
               />
             ))}
-            {/* 축하 텍스트 - 화면 전체 가로로 표시 후 사라짐 */}
             <div className="absolute inset-0 flex items-center justify-center animate-celebration-flash">
               <div className="text-6xl md:text-8xl lg:text-9xl font-bold text-white text-center w-full text-glow whitespace-nowrap">
                 🎉 おめでとう！ 🎉
@@ -180,181 +408,244 @@ const PrizeSlide = ({ index, data }) => {
           </div>
         )}
 
-        {/* 타이틀 */}
-        <h2
-          data-animate
-          className="text-4xl md:text-5xl lg:text-6xl font-display font-bold text-center mb-4 text-glow"
-        >
-          {data.title}
-        </h2>
+        {/* 타이틀 + 설정 버튼 */}
+        <div className="flex items-center justify-center gap-4 mb-4">
+          <h2
+            data-animate
+            className="text-4xl md:text-5xl lg:text-6xl font-display font-bold text-center text-glow"
+          >
+            {data.title}
+          </h2>
+          <button
+            onClick={() => setShowSettings(true)}
+            className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all hover:scale-110"
+            title="設定"
+          >
+            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </button>
+        </div>
 
         {/* 서브타이틀 */}
         {data.subtitle && (
-          <p
-            data-animate
-            className="text-center text-keio-yellow text-2xl mb-8"
-          >
+          <p data-animate className="text-center text-keio-yellow text-2xl mb-8">
             {data.subtitle}
           </p>
         )}
 
-        {/* 설정 화면 */}
+        {/* 설정이 없으면 안내 메시지 */}
         {!isSetupComplete ? (
-          <div
-            data-animate
-            className="p-8 md:p-10 rounded-3xl backdrop-blur-custom bg-white/5 border border-white/10"
-          >
-            <h3 className="text-2xl md:text-3xl text-white mb-8 text-center">
-              🎫 抽選設定
-            </h3>
-
-            <div className="max-w-md mx-auto space-y-6">
-              <div>
-                <label className="block text-white/80 text-lg mb-2">
-                  番号札の最大番号
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  value={maxNumber}
-                  onChange={(e) => setMaxNumber(e.target.value)}
-                  placeholder="例: 50"
-                  className="w-full px-6 py-4 text-2xl rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-keio-yellow focus:ring-2 focus:ring-keio-yellow/50"
-                />
-                <p className="mt-2 text-white/50 text-sm">
-                  1番から入力した番号までが抽選対象になります
-                </p>
-              </div>
-
-              <button
-                onClick={handleSetupComplete}
-                disabled={!maxNumber || parseInt(maxNumber) < 1}
-                className="w-full py-4 px-8 text-xl font-bold rounded-xl bg-gradient-to-r from-keio-yellow to-yellow-500 text-keio-blue-dark hover:scale-105 transition-transform disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-              >
-                設定完了 →
-              </button>
-            </div>
+          <div data-animate className="p-8 md:p-10 rounded-3xl backdrop-blur-custom bg-white/5 border border-white/10 text-center">
+            <p className="text-white/70 text-xl mb-6">
+              抽選を始める前に設定を行ってください
+            </p>
+            <button
+              onClick={() => setShowSettings(true)}
+              className="py-4 px-8 text-xl font-bold rounded-xl bg-gradient-to-r from-keio-yellow to-yellow-500 text-keio-blue-dark hover:scale-105 transition-transform"
+            >
+              ⚙️ 設定を開く
+            </button>
           </div>
         ) : (
-          /* 추첨 화면 */
-          <div data-animate className="space-y-6">
+          /* 추첨 화면 - 2열 구조 */
+          <div data-animate className="space-y-4">
             {/* 현재 상태 표시 */}
-            <div className="flex flex-wrap justify-center gap-4 text-white/70">
-              <span className="px-4 py-2 rounded-full bg-white/10">
-                番号範囲: 1 〜 {maxNumber}
+            <div className="flex flex-wrap justify-center gap-3 text-white/70 text-sm">
+              <span className="px-3 py-1.5 rounded-full bg-white/10">
+                番号: {settings.minNumber}〜{settings.maxNumber}
               </span>
-              <span className="px-4 py-2 rounded-full bg-white/10">
-                抽選済み: {drawnNumbers.length}名
+              <span className="px-3 py-1.5 rounded-full bg-white/10">
+                抽選済: {drawnNumbers.length}名
               </span>
-              <span className="px-4 py-2 rounded-full bg-white/10">
+              <span className="px-3 py-1.5 rounded-full bg-white/10">
                 残り: {getAvailableNumbers().length}名
               </span>
+              {settings.prizes.length > 0 && (
+                <span className="px-3 py-1.5 rounded-full bg-white/10">
+                  残り景品: {availablePrizes.length}種
+                </span>
+              )}
             </div>
 
-            {/* 추첨 컨트롤 */}
-            <div className="p-6 md:p-8 rounded-3xl backdrop-blur-custom bg-white/5 border border-white/10">
-              <div className="flex flex-col md:flex-row gap-4 md:gap-6 items-center justify-center mb-6">
-                {/* 추첨 인원 수 */}
-                <div className="flex items-center gap-3">
-                  <label className="text-white/80">抽選人数:</label>
-                  <input
-                    type="number"
-                    min="1"
-                    max={getAvailableNumbers().length}
-                    value={drawCount}
-                    onChange={(e) => setDrawCount(Math.max(1, parseInt(e.target.value) || 1))}
-                    className="w-20 px-4 py-2 text-xl text-center rounded-lg bg-white/10 border border-white/20 text-white focus:outline-none focus:border-keio-yellow"
-                  />
-                  <span className="text-white/80">名</span>
-                </div>
+            {/* 3열 레이아웃 */}
+            <div className="flex flex-col lg:flex-row gap-4">
+              {/* 좌측: 컨트롤 */}
+              <div className="lg:w-64 flex-shrink-0">
+                <div className="p-4 rounded-2xl backdrop-blur-custom bg-white/5 border border-white/10 h-full">
+                  {/* 상품 선택 (등록된 상품이 있을 때) */}
+                  {settings.prizes.length > 0 ? (
+                    <div className="mb-4">
+                      <div className="flex flex-col gap-2">
+                        <label className="text-white/80 text-sm">🎁 景品を選択:</label>
+                        <select
+                          value={selectedPrizeId || ''}
+                          onChange={(e) => setSelectedPrizeId(e.target.value ? Number(e.target.value) : null)}
+                          disabled={isDrawing || availablePrizes.length === 0}
+                          className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white text-sm focus:outline-none focus:border-keio-yellow disabled:opacity-50 cursor-pointer appearance-none"
+                          style={{
+                            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                            backgroundRepeat: 'no-repeat',
+                            backgroundPosition: 'right 8px center',
+                            backgroundSize: '16px',
+                          }}
+                        >
+                          <option value="" disabled className="bg-keio-blue-dark text-white/50">
+                            選択してください
+                          </option>
+                          {availablePrizes.map((prize) => (
+                            <option key={prize.id} value={prize.id} className="bg-keio-blue-dark text-white">
+                              {prize.name} ({prize.quantity}名)
+                            </option>
+                          ))}
+                        </select>
+                        {selectedPrizeId && (
+                          <div className="text-keio-yellow/80 text-xs">
+                            {(() => {
+                              const prize = settings.prizes.find(p => p.id === selectedPrizeId)
+                              return prize ? `${prize.quantity}名様${prize.sponsor ? ` / ${prize.sponsor}` : ''}` : ''
+                            })()}
+                          </div>
+                        )}
+                      </div>
+                      {availablePrizes.length === 0 && (
+                        <p className="text-white/50 py-2 text-xs">すべて抽選済み</p>
+                      )}
+                    </div>
+                  ) : (
+                    /* 상품 미등록 시 인원 수 직접 입력 */
+                    <div className="mb-4">
+                      <label className="text-white/80 text-sm block mb-2">抽選人数:</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          min="1"
+                          max={getAvailableNumbers().length}
+                          value={drawCount}
+                          onChange={(e) => setDrawCount(Math.max(1, parseInt(e.target.value) || 1))}
+                          className="w-20 px-3 py-2 text-center rounded-lg bg-white/10 border border-white/20 text-white focus:outline-none focus:border-keio-yellow"
+                        />
+                        <span className="text-white/80 text-sm">名</span>
+                      </div>
+                    </div>
+                  )}
 
-                {/* 중복 제외 체크박스 */}
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={excludeDuplicates}
-                    onChange={(e) => setExcludeDuplicates(e.target.checked)}
-                    className="w-5 h-5 rounded accent-keio-yellow"
-                  />
-                  <span className="text-white/80">当選済み番号を除外</span>
-                </label>
-              </div>
-
-              {/* 추첨 버튼 */}
-              <div className="flex flex-col md:flex-row gap-4 justify-center">
-                <button
-                  onClick={handleDraw}
-                  disabled={isDrawing || getAvailableNumbers().length === 0}
-                  className="py-4 px-12 text-2xl font-bold rounded-xl bg-gradient-to-r from-red-500 to-pink-500 text-white hover:scale-105 transition-all shadow-lg shadow-red-500/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-                >
-                  {isDrawing ? '🎰 抽選中...' : '🎲 抽選開始！'}
-                </button>
-
-                <button
-                  onClick={handleReset}
-                  disabled={isDrawing}
-                  className="py-4 px-8 text-lg rounded-xl bg-white/10 text-white/80 hover:bg-white/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  最初からやり直す
-                </button>
-              </div>
-            </div>
-
-            {/* 추첨 결과 표시 */}
-            <div className={`p-6 md:p-8 rounded-3xl backdrop-blur-custom border min-h-[200px] transition-all duration-300 ${
-              rollPhase === 'slow' ? 'bg-yellow-500/10 border-yellow-500/30' :
-              rollPhase === 'reveal' ? 'bg-green-500/10 border-green-500/30' :
-              'bg-white/5 border-white/10'
-            }`}>
-              <h4 className="text-xl text-keio-yellow mb-6 text-center">
-                {isDrawing
-                  ? rollPhase === 'fast'
-                    ? '🎰 抽選中...'
-                    : '🥁 まもなく発表...'
-                  : currentDrawn.length > 0
-                    ? '🎉 当選番号'
-                    : '抽選結果がここに表示されます'}
-              </h4>
-
-              {/* 롤링 또는 결과 번호 */}
-              <div className="flex flex-wrap justify-center gap-4">
-                {(isDrawing ? rollingNumbers : currentDrawn).map((num, idx) => (
-                  <div
-                    key={idx}
-                    className={`
-                      w-24 h-24 md:w-32 md:h-32 rounded-2xl flex items-center justify-center
-                      text-4xl md:text-5xl font-bold transition-all
-                      ${isDrawing
-                        ? rollPhase === 'slow'
-                          ? 'bg-yellow-500/30 text-yellow-300 scale-110'
-                          : 'bg-white/20 text-white animate-pulse'
-                        : 'bg-gradient-to-br from-yellow-400 to-yellow-600 text-keio-blue-dark animate-winner-pop shadow-lg shadow-yellow-500/50'
-                      }
-                    `}
-                  >
-                    {num}
+                  {/* 중복 제외 체크박스 */}
+                  <div className="mb-4">
+                    <label className="flex items-center gap-2 cursor-pointer text-xs">
+                      <input
+                        type="checkbox"
+                        checked={excludeDuplicates}
+                        onChange={(e) => setExcludeDuplicates(e.target.checked)}
+                        className="w-4 h-4 rounded accent-keio-yellow"
+                      />
+                      <span className="text-white/80">当選済み番号を除外</span>
+                    </label>
                   </div>
-                ))}
-              </div>
-            </div>
 
-            {/* 추첨 이력 */}
-            {drawnNumbers.length > 0 && (
-              <div className="p-4 md:p-6 rounded-2xl bg-white/5 border border-white/10">
-                <h4 className="text-sm text-white/60 mb-3">当選済み番号一覧:</h4>
-                <div className="flex flex-wrap gap-2">
-                  {drawnNumbers.map((num, idx) => (
-                    <span
-                      key={idx}
-                      className="px-3 py-1 rounded-full bg-keio-yellow/20 text-keio-yellow text-sm"
+                  {/* 추첨 버튼 */}
+                  <div className="space-y-2">
+                    <button
+                      onClick={handleDraw}
+                      disabled={isDrawing || getAvailableNumbers().length === 0 || (settings.prizes.length > 0 && !selectedPrizeId)}
+                      className="w-full py-3 text-lg font-bold rounded-xl bg-gradient-to-r from-red-500 to-pink-500 text-white hover:scale-105 transition-all shadow-lg shadow-red-500/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                     >
-                      {num}
-                    </span>
-                  ))}
+                      {isDrawing ? '🎰 抽選中...' : '🎲 抽選開始！'}
+                    </button>
+
+                    <button
+                      onClick={handleReset}
+                      disabled={isDrawing}
+                      className="w-full py-2 text-sm rounded-lg bg-white/10 text-white/80 hover:bg-white/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      履歴リセット
+                    </button>
+                  </div>
                 </div>
               </div>
-            )}
 
+              {/* 중앙: 추첨 결과 표시 */}
+              <div className="flex-1">
+                <div className={`p-4 md:p-6 rounded-2xl backdrop-blur-custom border h-full min-h-[280px] flex flex-col transition-all duration-300 ${
+                  rollPhase === 'slow' ? 'bg-yellow-500/10 border-yellow-500/30' :
+                  rollPhase === 'reveal' ? 'bg-green-500/10 border-green-500/30' :
+                  'bg-white/5 border-white/10'
+                }`}>
+                  <h4 className="text-xl text-keio-yellow mb-2 text-center">
+                    {isDrawing
+                      ? rollPhase === 'fast'
+                        ? `🎰 ${currentPrizeName} 抽選中...`
+                        : `🥁 ${currentPrizeName} まもなく発表...`
+                      : currentDrawn.length > 0
+                        ? `🎉 ${currentPrizeName} 当選番号`
+                        : '抽選結果がここに表示されます'}
+                  </h4>
+                  {currentSponsor && !isDrawing && currentDrawn.length > 0 && (
+                    <p className="text-center text-white/60 text-sm mb-2">提供: {currentSponsor}</p>
+                  )}
+
+                  <div className="flex-1 flex items-center justify-center">
+                    <div className="flex flex-wrap justify-center gap-4">
+                      {(isDrawing ? rollingNumbers : currentDrawn).map((num, idx) => (
+                        <div
+                          key={idx}
+                          className={`
+                            w-24 h-24 md:w-28 md:h-28 rounded-2xl flex items-center justify-center
+                            text-4xl md:text-5xl font-bold transition-all
+                            ${isDrawing
+                              ? rollPhase === 'slow'
+                                ? 'bg-yellow-500/30 text-yellow-300 scale-110'
+                                : 'bg-white/20 text-white animate-pulse'
+                              : 'bg-gradient-to-br from-yellow-400 to-yellow-600 text-keio-blue-dark animate-winner-pop shadow-lg shadow-yellow-500/50'
+                            }
+                          `}
+                        >
+                          {num}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 우측: 추첨 이력 */}
+              <div className="lg:w-64 flex-shrink-0">
+                <div
+                  className="p-4 rounded-2xl bg-white/5 border border-white/10 h-full max-h-[350px] lg:max-h-[400px] overflow-y-auto"
+                  onWheel={(e) => e.stopPropagation()}
+                >
+                  <h4 className="text-sm text-white/60 mb-3">
+                    📋 履歴 {drawHistory.length > 0 && `(${drawHistory.length})`}
+                  </h4>
+                  {drawHistory.length > 0 ? (
+                    <div className="space-y-2">
+                      {drawHistory.map((draw, idx) => (
+                        <div key={idx} className="p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+                          <div className="text-keio-yellow text-xs font-medium mb-1">
+                            {draw.prizeName}
+                          </div>
+                          <div className="flex flex-wrap gap-1">
+                            {draw.numbers.map((num, numIdx) => (
+                              <span
+                                key={numIdx}
+                                className="px-2 py-0.5 rounded-full bg-white/10 text-white text-xs"
+                              >
+                                {num}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-white/30 text-xs text-center py-6">
+                      履歴なし
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>
