@@ -100,3 +100,90 @@ body {
   background-size: 400% 400%;
   animation: gradient 15s ease infinite;
 }
+
+/* 그라데이션 애니메이션 */
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* 럭키드로우 축하 색종이 애니메이션 */
+@keyframes confetti {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+.animate-confetti {
+  animation: confetti 4s ease-out forwards;
+}
+
+/* 당첨 번호 팝 애니메이션 */
+@keyframes winner-pop {
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-winner-pop {
+  animation: winner-pop 0.5s ease-out forwards;
+}
+
+/* 바운스 스케일 애니메이션 */
+@keyframes bounce-scale {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.animate-bounce-scale {
+  animation: bounce-scale 0.8s ease-in-out infinite;
+}
+
+/* 축하 메시지 플래시 애니메이션 - 한번만 나타났다 사라짐 */
+@keyframes celebration-flash {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  15% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+  30% {
+    transform: scale(1);
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.animate-celebration-flash {
+  animation: celebration-flash 2s ease-out forwards;
+}

@@ -29,12 +29,14 @@ const SpeechSlide = ({ index, data }) => {
         </div>
 
         {/* 메시지 */}
-        <p
-          data-animate
-          className="text-xl md:text-2xl lg:text-3xl text-white/90 font-light leading-relaxed whitespace-pre-line"
-        >
-          {data.message}
-        </p>
+        {data.message && (
+          <p
+            data-animate
+            className="text-xl md:text-2xl lg:text-3xl text-white/90 font-light leading-relaxed whitespace-pre-line"
+          >
+            {data.message}
+          </p>
+        )}
       </div>
     </SlideWrapper>
   )

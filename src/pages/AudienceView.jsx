@@ -25,6 +25,7 @@ import IntroductionsSlide from '../components/slides/IntroductionsSlide'
 import SongSlide from '../components/slides/SongSlide'
 import PhotoSlide from '../components/slides/PhotoSlide'
 import ClosingSlide from '../components/slides/ClosingSlide'
+import SponsorSlide from '../components/slides/SponsorSlide'
 
 const AudienceView = () => {
   // 슬라이드 네비게이션 훅
@@ -41,8 +42,8 @@ const AudienceView = () => {
 
   // 슬라이드별 이펙트 설정
   const isOpeningSlide = currentSlide === 0
-  const showFireworks = currentSlide === 10 || currentSlide === 12 // 와카키치, 폐회 (첫 페이지 제외)
-  const gradientVariant = currentSlide === 7 ? 'gold' : currentSlide === 12 ? 'celebration' : 'default'
+  const showFireworks = currentSlide === 16 || currentSlide === 17 // 와카키치, 폐회
+  const gradientVariant = currentSlide === 7 ? 'gold' : currentSlide === 17 ? 'celebration' : 'default'
 
   // 슬라이드 타입에 따른 컴포넌트 렌더링
   const renderSlide = (data, index) => {
@@ -69,6 +70,8 @@ const AudienceView = () => {
         return <PhotoSlide key={data.id} index={index} data={data} />
       case 'closing':
         return <ClosingSlide key={data.id} />
+      case 'sponsor':
+        return <SponsorSlide key={data.id} index={index} data={data} />
       default:
         return null
     }

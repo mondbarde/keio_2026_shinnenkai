@@ -1,7 +1,26 @@
+import { useState, useRef } from 'react'
 import SlideWrapper from './SlideWrapper'
 import PenMark from '../ui/PenMark'
 
 const SongSlide = ({ index, data }) => {
+  const [isPlaying, setIsPlaying] = useState(false)
+  const audioRef = useRef(null)
+
+  const togglePlay = () => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause()
+      } else {
+        audioRef.current.play()
+      }
+      setIsPlaying(!isPlaying)
+    }
+  }
+
+  const handleEnded = () => {
+    setIsPlaying(false)
+  }
+
   return (
     <SlideWrapper index={index}>
       <div className="text-center max-w-4xl">
@@ -22,11 +41,47 @@ const SongSlide = ({ index, data }) => {
         {data.subtitle && (
           <h2
             data-animate
-            className="text-2xl md:text-3xl text-keio-yellow font-display mb-12"
+            className="text-2xl md:text-3xl text-keio-yellow font-display mb-8"
           >
             {data.subtitle}
           </h2>
         )}
+
+        {/* 오디오 플레이어 */}
+        <div data-animate className="mb-8">
+          <audio
+            ref={audioRef}
+            src="https://www.keio.ac.jp/ja/assets/download/about/learn-more/college-songs/index/02.mp3"
+            onEnded={handleEnded}
+          />
+          <button
+            onClick={togglePlay}
+            className={`
+              px-8 py-4 rounded-full text-xl font-bold transition-all duration-300
+              flex items-center gap-3 mx-auto
+              ${isPlaying
+                ? 'bg-red-500/80 hover:bg-red-500 text-white shadow-lg shadow-red-500/30'
+                : 'bg-keio-yellow hover:bg-yellow-400 text-keio-blue-dark shadow-lg shadow-keio-yellow/30'
+              }
+            `}
+          >
+            {isPlaying ? (
+              <>
+                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
+                </svg>
+                <span>一時停止</span>
+              </>
+            ) : (
+              <>
+                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+                <span>音楽再生</span>
+              </>
+            )}
+          </button>
+        </div>
 
         {/* 가사 */}
         <div

@@ -17,7 +17,7 @@ export const slidesData = [
     id: 'opening-speech',
     type: 'speech',
     title: '開会の辞',
-    speaker: '李錫容（イ・ソクヨン）',
+    speaker: '李碩庸（イ・ソクヨン）',
     message: '皆様、本日は韓国・ソウル三田会合同新年会に\nお集まりいただき、誠にありがとうございます。',
     notes: '개회사입니다. 사회자가 행사 시작을 알립니다.',
   },
@@ -60,7 +60,7 @@ export const slidesData = [
     address: '〒104-0061\n東京都中央区銀座7-9-15 GINZA gCUBE 12階',
     notes: '도쿄 미타클럽 안내입니다. 비즈니스 미팅 및 모임 장소로 이용 가능함을 안내합니다.',
   },
-  // 6. 食事・乾杯
+  // 7. 食事・乾杯
   {
     id: 'toast',
     type: 'toast',
@@ -70,21 +70,6 @@ export const slidesData = [
     caller: '乾杯ご発声',
     callerName: 'チャン・ジェグク東西大学長',
     notes: '건배 제의입니다. 장제국 동서대 총장님이 건배 제의합니다.',
-  },
-  // 7. 抽選会
-  {
-    id: 'lucky-draw',
-    type: 'prize',
-    title: '抽選会',
-    subtitle: 'ラッキードロー',
-    prizes: [
-      { rank: '1等賞', prize: '豪華賞品' },
-      { rank: '2等賞', prize: '賞品A' },
-      { rank: '3等賞', prize: '賞品B' },
-      { rank: '4等賞', prize: '賞品C' },
-      { rank: '5等賞', prize: '記念品' },
-    ],
-    notes: '럭키드로우(경품 추첨)입니다. 참가자들의 기대감을 높입니다.',
   },
   // 8. 初参加者・在学生紹介
   {
@@ -98,7 +83,135 @@ export const slidesData = [
     ],
     notes: '첫 참가자와 재학생을 소개합니다. 각자 간단히 인사하도록 안내합니다.',
   },
-  // 9. 閉会の辞
+  // 9. 在学生発表
+  {
+    id: 'student-presentation',
+    type: 'speech',
+    title: '在学生発表',
+    speaker: '発表者：塾生・崔昇一（チェ・スンイル）君',
+    message: '',
+    notes: '재학생 발표입니다. 최승일 군이 직접 발표합니다.',
+  },
+  // 10. スポンサー紹介 1
+  {
+    id: 'sponsor-1',
+    type: 'sponsor',
+    title: 'スポンサー紹介',
+    subtitle: '本日の新年会を支援してくださった方々',
+    sponsorName: '辛裕烈（シン・ユヨル）',
+    graduation: '商学部卒業（2008）',
+    logo: '/images/lotte_logo.webp',
+    positions: [
+      '現 ロッテホールディングス 未来成長室長 副社長',
+      '現 ロッテバイオロジクス 代表取締役 副社長',
+      '現 日本ロッテストラテジックインベストメント 代表取締役',
+      '現 日本ロッテファイナンシャル 代表取締役',
+    ],
+    notes: '스폰서 소개 1 - 신유열 부사장',
+  },
+  // 11. スポンサー紹介 2
+  {
+    id: 'sponsor-2',
+    type: 'sponsor',
+    title: 'スポンサー紹介',
+    subtitle: '本日の新年会を支援してくださった方々',
+    sponsorName: 'ジョン・ヨンテ',
+    graduation: '別科',
+    logo: '/images/jukjangyeon.png',
+    positions: [
+      '現 竹長然 代表',
+    ],
+    notes: '스폰서 소개 2 - 정연태 대표',
+  },
+  // 12. スポンサー紹介 3 (景品提供者 1)
+  {
+    id: 'sponsor-3',
+    type: 'sponsor',
+    title: 'スポンサー紹介',
+    subtitle: '景品をご提供いただいた方々',
+    sponsors: [
+      {
+        name: 'ノ・ミリム',
+        graduation: '文学部（1975年卒業）',
+        prize: '本人著書',
+      },
+      {
+        name: '宮崎 能成',
+        graduation: '法学部政治学科（1986年卒業）',
+        prize: '日本カップラーメン 1ケース',
+      },
+      {
+        name: 'キム・スジン',
+        graduation: '文学部（1989年卒業）',
+        prize: '百貨店10万ウォン商品券 2枚',
+      },
+      {
+        name: '中島 幸一',
+        graduation: '理工学研究科計測工学専攻（1992年卒業）',
+        prize: 'お酒（日本酒またはウイスキー等）1本 約10万ウォン',
+      },
+      {
+        name: '高瀬 勇',
+        graduation: '経済学部（1995年卒業）',
+        prize: 'ワイン 1本 5万ウォン',
+      },
+      {
+        name: '山崎 裕二',
+        graduation: '経済学部（1996年卒業）',
+        prize: 'ゴルフボール 1ダース',
+      },
+    ],
+    notes: '스폰서 소개 3 - 경품 제공자 1페이지',
+  },
+  // 13. スポンサー紹介 4 (景品提供者 2)
+  {
+    id: 'sponsor-4',
+    type: 'sponsor',
+    title: 'スポンサー紹介',
+    subtitle: '景品をご提供いただいた方々',
+    sponsors: [
+      {
+        name: '大坪 克英',
+        graduation: '法学部政治学科（1997年卒業）',
+        prize: '末廣酒造（親族） 大吟醸 1本 約10万ウォン相当',
+      },
+      {
+        name: 'ソン・ギヒ',
+        graduation: 'メディアコミュニケーション研究所（2001年卒業）',
+        prize: 'トゥブガク 1箱（焼き豆腐菓子 本人開発製品）',
+      },
+      {
+        name: '西園 壽元',
+        graduation: '経済学部（2007年卒業）',
+        prize: 'ソラリア西鉄ホテルソウル明洞 1泊宿泊券（朝食付き）',
+      },
+      {
+        name: '角舘 一輝',
+        graduation: '経済学部（2012年卒業）',
+        prize: 'スターバックスコーヒーチケット 1万ウォン券',
+      },
+      {
+        name: 'ハ・ドギュ',
+        graduation: '商学部（2015年卒業）',
+        prize: 'ワイン 1本（キム・デシク国会議員贈呈のワイン）',
+      },
+      {
+        name: 'パク・ジュンヨン',
+        graduation: '商学部（2019年卒業）',
+        prize: 'ワイン 1本（カナダ産 約10万ウォン相当）',
+      },
+    ],
+    notes: '스폰서 소개 4 - 경품 제공자 2페이지',
+  },
+  // 14. 抽選会
+  {
+    id: 'lucky-draw',
+    type: 'prize',
+    title: '抽選会',
+    subtitle: 'ラッキードロー',
+    notes: '럭키드로우(경품 추첨)입니다. 번호표 범위를 설정하고 실시간으로 추첨합니다.',
+  },
+  // 15. 閉会の辞
   {
     id: 'closing-speech',
     type: 'speech',
@@ -107,7 +220,7 @@ export const slidesData = [
     message: '本日は韓国・ソウル三田会合同新年会に\nご参加いただき、誠にありがとうございました。',
     notes: '폐회사입니다. 대표자가 감사 인사를 전합니다.',
   },
-  // 10. 若き血斉唱
+  // 16. 若き血斉唱
   {
     id: 'wakakichi',
     type: 'song',
@@ -118,11 +231,16 @@ export const slidesData = [
       '光輝みてる我等',
       '希望の明星仰ぎて此処に',
       '勝利に進む我が力',
-      '慶應 慶應 陸の王者 慶應',
+      '常に新し',
+      '見よ精鋭の集う処',
+      '烈日の意気高らかに',
+      '遮る雲なきを',
+      '慶應　慶應',
+      '陸の王者　慶應',
     ],
     notes: '와카키치(若き血) 제창입니다. 가사를 화면에 표시합니다.',
   },
-  // 11. 記念撮影
+  // 17. 記念撮影
   {
     id: 'photo',
     type: 'photo',
@@ -131,7 +249,7 @@ export const slidesData = [
     instruction: '撮影後は二次会会場へご案内いたします',
     notes: '기념사진 촬영입니다. 참가자들을 무대 앞으로 안내합니다.',
   },
-  // 12. 閉会
+  // 18. 閉会
   {
     id: 'closing',
     type: 'closing',
