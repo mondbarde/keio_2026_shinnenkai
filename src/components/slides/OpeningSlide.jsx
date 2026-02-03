@@ -3,21 +3,193 @@ import SlideWrapper from './SlideWrapper'
 import { slidesData } from '../../data/slides'
 import PenMark from '../ui/PenMark'
 
-// YouTube URL에서 Video ID 추출
-const extractYoutubeId = (url) => {
+// YouTube URL에서 Video ID 또는 Playlist ID 추출
+const extractYoutubeInfo = (url) => {
   if (!url) return null
-  // 이미 ID만 있는 경우
-  if (url.length === 11 && !url.includes('/')) return url
+
+  // 플레이리스트 ID 추출 (list= 파라미터)
+  const playlistMatch = url.match(/[?&]list=([a-zA-Z0-9_-]+)/)
+  if (playlistMatch) {
+    return {
+      type: 'playlist',
+      id: playlistMatch[1],
+    }
+  }
+
+  // 이미 ID만 있는 경우 (11자)
+  if (url.length === 11 && !url.includes('/')) {
+    return { type: 'video', id: url }
+  }
   // youtu.be 형식
   const shortMatch = url.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/)
-  if (shortMatch) return shortMatch[1]
+  if (shortMatch) return { type: 'video', id: shortMatch[1] }
   // youtube.com 형식
   const longMatch = url.match(/[?&]v=([a-zA-Z0-9_-]{11})/)
-  if (longMatch) return longMatch[1]
+  if (longMatch) return { type: 'video', id: longMatch[1] }
   // embed 형식
   const embedMatch = url.match(/embed\/([a-zA-Z0-9_-]{11})/)
-  if (embedMatch) return embedMatch[1]
+  if (embedMatch) return { type: 'video', id: embedMatch[1] }
+
   return null
+}
+
+// YouTube embed URL 생성
+const getEmbedUrl = (track) => {
+  if (track.isPlaylistFallback) {
+    // 플레이리스트 폴백: 전체 재생
+    return `https://www.youtube.com/embed/videoseries?list=${track.youtubeId}&autoplay=1&rel=0`
+  }
+  return `https://www.youtube.com/embed/${track.youtubeId}?autoplay=1&rel=0`
+}
+
+// JSON 객체의 끝을 찾는 함수 (브라켓 매칭)
+const findJsonEnd = (str, startIndex) => {
+  let depth = 0
+  let inString = false
+  let escape = false
+
+  for (let i = startIndex; i < str.length; i++) {
+    const char = str[i]
+
+    if (escape) {
+      escape = false
+      continue
+    }
+
+    if (char === '\\') {
+      escape = true
+      continue
+    }
+
+    if (char === '"' && !escape) {
+      inString = !inString
+      continue
+    }
+
+    if (inString) continue
+
+    if (char === '{') depth++
+    if (char === '}') {
+      depth--
+      if (depth === 0) return i + 1
+    }
+  }
+
+  return -1
+}
+
+// 플레이리스트에서 개별 영상 목록 가져오기
+const fetchPlaylistVideos = async (playlistId) => {
+  try {
+    // CORS 프록시를 통해 플레이리스트 페이지 가져오기
+    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(`https://www.youtube.com/playlist?list=${playlistId}`)}`
+    const response = await fetch(proxyUrl)
+    const data = await response.json()
+
+    if (!data.contents) return []
+
+    // HTML에서 비디오 정보 추출 (ytInitialData JSON 파싱)
+    const html = data.contents
+
+    // ytInitialData 시작 위치 찾기
+    const markers = ['var ytInitialData = {', 'ytInitialData = {', 'window["ytInitialData"] = {']
+    let ytData = null
+
+    for (const marker of markers) {
+      const startIdx = html.indexOf(marker)
+      if (startIdx !== -1) {
+        const jsonStart = html.indexOf('{', startIdx)
+        const jsonEnd = findJsonEnd(html, jsonStart)
+
+        if (jsonEnd !== -1) {
+          const jsonStr = html.substring(jsonStart, jsonEnd)
+          try {
+            ytData = JSON.parse(jsonStr)
+            console.log('Successfully parsed ytInitialData')
+            break
+          } catch (e) {
+            console.log(`Failed to parse JSON with marker "${marker}":`, e.message)
+          }
+        }
+      }
+    }
+
+    if (ytData) {
+      return extractVideosFromYtData(ytData)
+    }
+
+    console.log('Could not find or parse ytInitialData')
+    return []
+  } catch (error) {
+    console.error('Failed to fetch playlist:', error)
+    return []
+  }
+}
+
+// ytInitialData에서 비디오 정보 추출
+const extractVideosFromYtData = (ytData) => {
+  const videos = []
+
+  try {
+    // 여러 가능한 경로 시도
+    let contents = null
+
+    // 경로 1: 표준 플레이리스트 경로
+    contents = ytData?.contents?.twoColumnBrowseResultsRenderer?.tabs?.[0]
+      ?.tabRenderer?.content?.sectionListRenderer?.contents?.[0]
+      ?.itemSectionRenderer?.contents?.[0]?.playlistVideoListRenderer?.contents
+
+    // 경로 2: 대체 경로
+    if (!contents) {
+      contents = ytData?.contents?.twoColumnBrowseResultsRenderer?.tabs?.[0]
+        ?.tabRenderer?.content?.sectionListRenderer?.contents?.[0]
+        ?.playlistVideoListRenderer?.contents
+    }
+
+    // 경로 3: 또 다른 대체 경로
+    if (!contents) {
+      const tabs = ytData?.contents?.twoColumnBrowseResultsRenderer?.tabs
+      if (tabs) {
+        for (const tab of tabs) {
+          const sectionContents = tab?.tabRenderer?.content?.sectionListRenderer?.contents
+          if (sectionContents) {
+            for (const section of sectionContents) {
+              const playlistRenderer = section?.itemSectionRenderer?.contents?.[0]?.playlistVideoListRenderer
+                || section?.playlistVideoListRenderer
+              if (playlistRenderer?.contents) {
+                contents = playlistRenderer.contents
+                break
+              }
+            }
+          }
+          if (contents) break
+        }
+      }
+    }
+
+    if (!contents) {
+      console.log('Could not find playlist contents in ytData')
+      return []
+    }
+
+    contents.forEach((item, index) => {
+      const video = item?.playlistVideoRenderer
+      if (video && video.videoId) {
+        videos.push({
+          id: Date.now() + index,
+          title: video.title?.runs?.[0]?.text || video.title?.simpleText || `Track ${index + 1}`,
+          album: video.shortBylineText?.runs?.[0]?.text || video.longBylineText?.runs?.[0]?.text || 'YouTube',
+          youtubeId: video.videoId,
+        })
+      }
+    })
+
+    console.log(`Extracted ${videos.length} videos from playlist`)
+  } catch (e) {
+    console.error('Error extracting videos:', e)
+  }
+
+  return videos
 }
 
 // 기본 플레이리스트 (작동 확인된 것만)
@@ -48,33 +220,60 @@ const OpeningSlide = () => {
     setIsPlaying(false)
   }
 
-  // 커스텀 URL 추가
-  const handleAddCustom = () => {
-    const videoId = extractYoutubeId(customUrl)
-    if (videoId) {
-      const newTrack = {
-        id: Date.now(),
-        title: 'Custom BGM',
-        album: 'YouTube',
-        youtubeId: videoId,
-      }
-      setPlaylist([...playlist, newTrack])
-      setCustomUrl('')
-      // 바로 재생
-      setCurrentTrack(playlist.length)
-      setIsPlaying(true)
+  // 트랙 삭제
+  const handleDeleteTrack = (idx) => {
+    // 현재 재생 중인 곡을 삭제하면 정지
+    if (currentTrack === idx && isPlaying) {
+      setIsPlaying(false)
     }
+    // 삭제 후 currentTrack 조정
+    if (currentTrack >= idx && currentTrack > 0) {
+      setCurrentTrack(currentTrack - 1)
+    }
+    setPlaylist(playlist.filter((_, i) => i !== idx))
   }
 
+  // 로딩 상태
+  const [isLoading, setIsLoading] = useState(false)
+
   // 커스텀 URL로 바로 재생
-  const handlePlayCustom = () => {
-    const videoId = extractYoutubeId(customUrl)
-    if (videoId) {
+  const handlePlayCustom = async () => {
+    const info = extractYoutubeInfo(customUrl)
+    if (!info) return
+
+    if (info.type === 'playlist') {
+      // 플레이리스트: 개별 영상들을 가져와서 추가
+      setIsLoading(true)
+      setCustomUrl('')
+
+      const videos = await fetchPlaylistVideos(info.id)
+
+      if (videos.length > 0) {
+        setPlaylist([...playlist, ...videos])
+        setCurrentTrack(playlist.length) // 첫 번째 새 곡부터 재생
+        setIsPlaying(true)
+      } else {
+        // 파싱 실패 시 플레이리스트 전체 재생으로 폴백
+        const fallbackTrack = {
+          id: Date.now(),
+          title: 'YouTube Playlist',
+          album: '連続再生',
+          youtubeId: info.id,
+          isPlaylistFallback: true,
+        }
+        setPlaylist([...playlist, fallbackTrack])
+        setCurrentTrack(playlist.length)
+        setIsPlaying(true)
+      }
+
+      setIsLoading(false)
+    } else {
+      // 단일 영상
       const newTrack = {
         id: Date.now(),
         title: 'Custom BGM',
         album: 'YouTube',
-        youtubeId: videoId,
+        youtubeId: info.id,
       }
       setPlaylist([...playlist, newTrack])
       setCurrentTrack(playlist.length)
@@ -152,17 +351,34 @@ const OpeningSlide = () => {
         {/* 플레이어 토글 버튼 */}
         <button
           onClick={() => setShowPlayer(!showPlayer)}
-          className="w-14 h-14 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center hover:bg-white/20 transition-all shadow-lg"
+          className={`w-14 h-14 rounded-full backdrop-blur-md border flex items-center justify-center transition-all shadow-lg ${
+            isPlaying ? 'bg-keio-yellow/20 border-keio-yellow/50' : 'bg-white/10 border-white/20 hover:bg-white/20'
+          }`}
           title="배경음악"
         >
-          <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+          <svg className={`w-6 h-6 ${isPlaying ? 'text-keio-yellow' : 'text-white'}`} fill="currentColor" viewBox="0 0 24 24">
             <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
           </svg>
         </button>
 
+        {/* YouTube 플레이어 - 숨김 (패널 닫아도 재생 유지) */}
+        {isPlaying && playlist[currentTrack] && (
+          <div className="absolute -left-[9999px] w-1 h-1 overflow-hidden">
+            <iframe
+              ref={iframeRef}
+              src={getEmbedUrl(playlist[currentTrack])}
+              title={playlist[currentTrack].title}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            />
+          </div>
+        )}
+
         {/* 플레이어 패널 */}
         {showPlayer && (
-          <div className="absolute bottom-16 right-0 w-96 bg-black/90 backdrop-blur-md rounded-2xl border border-white/20 shadow-2xl overflow-hidden">
+          <div
+            className="absolute bottom-16 right-0 w-96 bg-black/90 backdrop-blur-md rounded-2xl border border-white/20 shadow-2xl overflow-hidden"
+            onWheel={(e) => e.stopPropagation()}
+          >
             {/* 헤더 */}
             <div className="p-4 border-b border-white/10">
               <div className="flex items-center justify-between">
@@ -176,18 +392,6 @@ const OpeningSlide = () => {
                 </div>
               </div>
             </div>
-
-            {/* YouTube 플레이어 - 숨김 (음악만 재생) */}
-            {isPlaying && (
-              <div className="absolute -left-[9999px] w-1 h-1 overflow-hidden">
-                <iframe
-                  ref={iframeRef}
-                  src={`https://www.youtube.com/embed/${playlist[currentTrack].youtubeId}?autoplay=1&rel=0`}
-                  title={playlist[currentTrack].title}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                />
-              </div>
-            )}
 
             {/* 현재 재생 중인 곡 정보 + 정지 버튼 */}
             {isPlaying && (
@@ -223,36 +427,73 @@ const OpeningSlide = () => {
 
             {/* 플레이리스트 */}
             <div className="max-h-48 overflow-y-auto">
+              {/* 로딩 표시 */}
+              {isLoading && (
+                <div className="p-4 flex items-center justify-center gap-2">
+                  <div className="w-4 h-4 border-2 border-keio-yellow/30 border-t-keio-yellow rounded-full animate-spin" />
+                  <span className="text-white/70 text-sm">Playlist 読み込み中...</span>
+                </div>
+              )}
+
               {playlist.map((track, idx) => (
-                <button
+                <div
                   key={track.id}
-                  onClick={() => handlePlayTrack(idx)}
-                  className={`w-full p-3 flex items-center gap-3 hover:bg-white/10 transition-colors text-left ${
+                  className={`w-full p-3 flex items-center gap-3 hover:bg-white/10 transition-colors group ${
                     currentTrack === idx && isPlaying ? 'bg-white/10' : ''
                   }`}
                 >
-                  {/* 트랙 번호/재생 아이콘 */}
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                    currentTrack === idx && isPlaying ? 'bg-keio-yellow' : 'bg-white/10'
-                  }`}>
+                  {/* 재생 버튼 */}
+                  <button
+                    onClick={() => handlePlayTrack(idx)}
+                    className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-colors ${
+                      currentTrack === idx && isPlaying ? 'bg-keio-yellow' : track.isPlaylistFallback ? 'bg-purple-500/30 hover:bg-purple-500/50' : 'bg-white/10 hover:bg-white/20'
+                    }`}
+                    title="再生"
+                  >
                     {currentTrack === idx && isPlaying ? (
                       <svg className="w-4 h-4 text-keio-blue-dark" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
+                      </svg>
+                    ) : track.isPlaylistFallback ? (
+                      <svg className="w-4 h-4 text-purple-300" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M4 6h16v2H4V6zm0 5h16v2H4v-2zm0 5h10v2H4v-2zm14-1v6l5-3-5-3z" />
                       </svg>
                     ) : (
                       <svg className="w-4 h-4 text-white/70" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M8 5v14l11-7z" />
                       </svg>
                     )}
-                  </div>
-                  {/* 트랙 정보 */}
-                  <div className="flex-1 min-w-0">
-                    <p className={`text-sm truncate ${currentTrack === idx && isPlaying ? 'text-keio-yellow' : 'text-white'}`}>
+                  </button>
+                  {/* 트랙 정보 (클릭으로 재생) */}
+                  <button
+                    onClick={() => handlePlayTrack(idx)}
+                    className="flex-1 min-w-0 text-left"
+                  >
+                    <p className={`text-sm truncate ${currentTrack === idx && isPlaying ? 'text-keio-yellow' : track.isPlaylistFallback ? 'text-purple-300' : 'text-white'}`}>
                       {track.title}
                     </p>
                     <p className="text-xs text-white/50 truncate">{track.album}</p>
-                  </div>
-                </button>
+                  </button>
+                  {/* 플레이리스트 폴백 뱃지 */}
+                  {track.isPlaylistFallback && (
+                    <span className="px-2 py-0.5 rounded-full bg-purple-500/30 text-purple-300 text-xs">
+                      連続再生
+                    </span>
+                  )}
+                  {/* 삭제 버튼 */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleDeleteTrack(idx)
+                    }}
+                    className="w-6 h-6 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-red-500/30 transition-all"
+                    title="削除"
+                  >
+                    <svg className="w-3.5 h-3.5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
               ))}
             </div>
 
@@ -263,7 +504,7 @@ const OpeningSlide = () => {
                   type="text"
                   value={customUrl}
                   onChange={(e) => setCustomUrl(e.target.value)}
-                  placeholder="YouTube URL を貼り付け"
+                  placeholder="動画 / Playlist URL"
                   className="flex-1 px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white text-sm placeholder-white/40 focus:outline-none focus:border-keio-yellow/50"
                   onKeyDown={(e) => e.key === 'Enter' && handlePlayCustom()}
                 />
@@ -280,7 +521,13 @@ const OpeningSlide = () => {
             {/* 푸터 */}
             <div className="p-2 border-t border-white/10 bg-white/5">
               <p className="text-center text-white/40 text-xs">
-                {isPlaying ? '再生中 - YouTube Audio' : 'YouTubeのURLを貼り付けて再生'}
+                {isLoading
+                  ? 'Playlist 読み込み中...'
+                  : isPlaying
+                    ? playlist[currentTrack]?.isPlaylistFallback
+                      ? '再生中 - Playlist 連続再生'
+                      : '再生中 - YouTube Audio'
+                    : '動画URL または Playlist URL'}
               </p>
             </div>
           </div>
