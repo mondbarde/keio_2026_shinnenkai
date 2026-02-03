@@ -44,6 +44,11 @@ const ToastSlide = ({ index, data }) => {
             <span className="text-keio-yellow text-xl md:text-2xl font-display">
               {data.caller}
             </span>
+            {data.callerName && (
+              <span className="text-white text-xl md:text-2xl font-display ml-3">
+                {data.callerName}
+              </span>
+            )}
           </div>
         )}
       </div>

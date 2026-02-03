@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { gsap } from 'gsap'
 
-const ParticleBackground = ({ particleCount = 50, colors = ['#FFD700', '#FFFFFF', '#4169E1'] }) => {
+const ParticleBackground = ({ particleCount = 30, colors = ['#FFD700', '#FFFFFF', '#4169E1'] }) => {
   const containerRef = useRef(null)
 
   useEffect(() => {
@@ -13,15 +13,14 @@ const ParticleBackground = ({ particleCount = 50, colors = ['#FFD700', '#FFFFFF'
     // 파티클 생성
     for (let i = 0; i < particleCount; i++) {
       const particle = document.createElement('div')
-      particle.className = 'absolute rounded-full pointer-events-none'
+      particle.className = 'absolute rounded-full pointer-events-none will-change-transform'
 
-      const size = Math.random() * 6 + 2
+      const size = Math.random() * 4 + 2
       const color = colors[Math.floor(Math.random() * colors.length)]
 
       particle.style.width = `${size}px`
       particle.style.height = `${size}px`
       particle.style.backgroundColor = color
-      particle.style.boxShadow = `0 0 ${size * 2}px ${color}`
       particle.style.opacity = '0'
 
       container.appendChild(particle)
@@ -42,10 +41,10 @@ const ParticleBackground = ({ particleCount = 50, colors = ['#FFD700', '#FFFFFF'
       })
 
       gsap.to(particle, {
-        duration: Math.random() * 3 + 2,
-        x: startX + (Math.random() - 0.5) * 200,
-        y: startY - Math.random() * 200 - 100,
-        opacity: Math.random() * 0.7 + 0.3,
+        duration: Math.random() * 4 + 3,
+        x: startX + (Math.random() - 0.5) * 150,
+        y: startY - Math.random() * 150 - 50,
+        opacity: Math.random() * 0.5 + 0.2,
         ease: 'power1.out',
         onComplete: () => {
           gsap.to(particle, {
@@ -58,7 +57,10 @@ const ParticleBackground = ({ particleCount = 50, colors = ['#FFD700', '#FFFFFF'
     }
 
     return () => {
-      particles.forEach(p => p.remove())
+      particles.forEach(p => {
+        gsap.killTweensOf(p)
+        p.remove()
+      })
     }
   }, [particleCount, colors])
 

@@ -5,7 +5,7 @@ const usePresentationStore = create((set, get) => ({
   currentSlide: 0,
 
   // 전체 슬라이드 수
-  totalSlides: 12,
+  totalSlides: 13,
 
   // 애니메이션 진행 중 여부 (중복 전환 방지)
   isAnimating: false,

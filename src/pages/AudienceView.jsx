@@ -18,6 +18,7 @@ import OpeningSlide from '../components/slides/OpeningSlide'
 import SpeechSlide from '../components/slides/SpeechSlide'
 import VideoSlide from '../components/slides/VideoSlide'
 import InfoSlide from '../components/slides/InfoSlide'
+import AnnouncementSlide from '../components/slides/AnnouncementSlide'
 import ToastSlide from '../components/slides/ToastSlide'
 import PrizeSlide from '../components/slides/PrizeSlide'
 import IntroductionsSlide from '../components/slides/IntroductionsSlide'
@@ -40,8 +41,8 @@ const AudienceView = () => {
 
   // 슬라이드별 이펙트 설정
   const isOpeningSlide = currentSlide === 0
-  const showFireworks = currentSlide === 9 || currentSlide === 11 // 와카키치, 폐회 (첫 페이지 제외)
-  const gradientVariant = currentSlide === 6 ? 'gold' : currentSlide === 11 ? 'celebration' : 'default'
+  const showFireworks = currentSlide === 10 || currentSlide === 12 // 와카키치, 폐회 (첫 페이지 제외)
+  const gradientVariant = currentSlide === 7 ? 'gold' : currentSlide === 12 ? 'celebration' : 'default'
 
   // 슬라이드 타입에 따른 컴포넌트 렌더링
   const renderSlide = (data, index) => {
@@ -54,6 +55,8 @@ const AudienceView = () => {
         return <VideoSlide key={data.id} index={index} data={data} />
       case 'info':
         return <InfoSlide key={data.id} index={index} data={data} />
+      case 'announcement':
+        return <AnnouncementSlide key={data.id} index={index} data={data} />
       case 'toast':
         return <ToastSlide key={data.id} index={index} data={data} />
       case 'prize':

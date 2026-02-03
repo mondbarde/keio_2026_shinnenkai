@@ -28,13 +28,12 @@ const GradientBackground = ({ variant = 'default' }) => {
 
     const orbs = bg.children
 
-    // 각 오브에 대한 부드러운 움직임 애니메이션
+    // 부드러운 움직임 (transform만 사용)
     Array.from(orbs).forEach((orb, index) => {
       gsap.to(orb, {
-        duration: 10 + index * 2,
-        x: () => Math.random() * 100 - 50,
-        y: () => Math.random() * 100 - 50,
-        scale: () => 0.8 + Math.random() * 0.4,
+        duration: 20 + index * 5,
+        x: () => Math.random() * 50 - 25,
+        y: () => Math.random() * 50 - 25,
         repeat: -1,
         yoyo: true,
         ease: 'sine.inOut',
@@ -56,16 +55,26 @@ const GradientBackground = ({ variant = 'default' }) => {
         {currentGradients.map((gradient, index) => (
           <div
             key={index}
-            className="absolute inset-0 transition-opacity duration-1000"
+            className="absolute inset-0 will-change-transform"
             style={{ background: gradient }}
           />
         ))}
       </div>
 
-      {/* 추가 장식 요소 */}
-      <div className="absolute inset-0 opacity-30">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-keio-blue-light rounded-full filter blur-3xl animate-float" />
-        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-keio-accent-blue rounded-full filter blur-3xl animate-float" style={{ animationDelay: '-3s' }} />
+      {/* 정적 장식 요소 (애니메이션 제거) */}
+      <div className="absolute inset-0 opacity-20 pointer-events-none">
+        <div
+          className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full"
+          style={{
+            background: 'radial-gradient(circle, rgba(30, 87, 153, 0.8) 0%, transparent 70%)',
+          }}
+        />
+        <div
+          className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full"
+          style={{
+            background: 'radial-gradient(circle, rgba(65, 105, 225, 0.8) 0%, transparent 70%)',
+          }}
+        />
       </div>
     </div>
   )

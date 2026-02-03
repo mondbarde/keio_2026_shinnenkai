@@ -28,28 +28,37 @@ export const slidesData = [
     title: '塾長祝辞映像',
     subtitle: '伊藤公平塾長',
     description: '慶應義塾大学塾長からの祝辞映像をご覧ください',
+    videoUrl: 'https://vimeo.com/1161430886',
     notes: '총장 축사 영상을 재생합니다. 영상 시작 전 안내합니다.',
   },
-  // 4. 東京三田倶楽部祝賀映像視聴
+  // 4. 韓国文化院院長祝辞映像視聴
+  {
+    id: 'cultural-center-video',
+    type: 'video',
+    title: '韓国文化院院長祝辞映像',
+    subtitle: '朴英恵（パク・ヨンヘ）院長',
+    description: '朴英恵院長(法学部政治学科92年卒業)からの祝辞映像をご覧ください',
+    videoUrl: 'https://vimeo.com/1161434996',
+    notes: '주일본대한민국대사관 한국문화원 박영혜 원장의 축사 영상을 재생합니다.',
+  },
+  // 5. 東京三田倶楽部祝賀映像視聴
   {
     id: 'mita-club-video',
     type: 'video',
     title: '東京三田倶楽部',
-    subtitle: '祝賀映像',
+    subtitle: '祝辞映像',
     description: '東京三田倶楽部からのお祝いメッセージをご覧ください',
+    videoUrl: 'https://vimeo.com/1161430938',
     notes: '도쿄 미타클럽 축하 영상을 재생합니다.',
   },
-  // 5. 三田会のご案内
+  // 6. 三田クラブのご案内
   {
     id: 'mita-info',
-    type: 'info',
-    title: '三田会のご案内',
-    items: [
-      { label: '韓国三田会', description: '韓国在住の慶應義塾卒業生の会' },
-      { label: 'ソウル三田会', description: 'ソウル地域の慶應義塾卒業生の会' },
-      { label: '入会案内', description: '新規会員募集中！' },
-    ],
-    notes: '미타클럽(동문회) 안내입니다. 신규 회원 모집을 안내합니다.',
+    type: 'announcement',
+    title: '東京三田倶楽部のご案内',
+    image: '/images/0101.jpg',
+    address: '〒104-0061\n東京都中央区銀座7-9-15 GINZA gCUBE 12階',
+    notes: '도쿄 미타클럽 안내입니다. 비즈니스 미팅 및 모임 장소로 이용 가능함을 안내합니다.',
   },
   // 6. 食事・乾杯
   {
@@ -59,7 +68,8 @@ export const slidesData = [
     subtitle: '食事開始',
     message: '皆様のご健康と\n慶應義塾の発展を祈念いたしまして',
     caller: '乾杯ご発声',
-    notes: '건배 제의입니다. 건배 발성자를 소개합니다.',
+    callerName: 'チャン・ジェグク東西大学長',
+    notes: '건배 제의입니다. 장제국 동서대 총장님이 건배 제의합니다.',
   },
   // 7. 抽選会
   {
@@ -68,11 +78,11 @@ export const slidesData = [
     title: '抽選会',
     subtitle: 'ラッキードロー',
     prizes: [
-      { rank: '大賞', prize: '豪華賞品' },
-      { rank: '1等', prize: '賞品A' },
-      { rank: '2等', prize: '賞品B' },
-      { rank: '3等', prize: '賞品C' },
-      { rank: '参加賞', prize: '記念品' },
+      { rank: '1等賞', prize: '豪華賞品' },
+      { rank: '2等賞', prize: '賞品A' },
+      { rank: '3等賞', prize: '賞品B' },
+      { rank: '4等賞', prize: '賞品C' },
+      { rank: '5等賞', prize: '記念品' },
     ],
     notes: '럭키드로우(경품 추첨)입니다. 참가자들의 기대감을 높입니다.',
   },
