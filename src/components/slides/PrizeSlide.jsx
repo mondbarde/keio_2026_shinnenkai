@@ -17,6 +17,10 @@ const DEFAULT_PRIZES = [
   { id: 10, name: 'スターバックスコーヒーチケット 1万ウォン券', quantity: 1, sponsor: '角舘 一輝' },
   { id: 11, name: 'ワイン 1本（キム・デシク国会議員贈呈）', quantity: 1, sponsor: 'ハ・ドギュ' },
   { id: 12, name: 'ワイン 1本（カナダ産）', quantity: 1, sponsor: 'パク・ジュンヨン' },
+  { id: 13, name: '百貨店商品券 10万ウォン券', quantity: 2, sponsor: 'ロッテ' },
+  { id: 14, name: 'シャーロッテ観覧券 1セット（2枚）', quantity: 3, sponsor: 'ロッテ' },
+  { id: 15, name: 'ロッテホテル チーズケーキ引換券', quantity: 10, sponsor: 'ロッテ' },
+  { id: 16, name: 'ロッテホテル キムチ（4kg）', quantity: 10, sponsor: 'ロッテ' },
 ]
 
 // 기본 참가자 목록
