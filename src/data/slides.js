@@ -246,7 +246,7 @@ export const slidesData = [
     type: 'photo',
     title: '記念撮影',
     message: '皆様、ステージ前にお集まりください',
-    instruction: '撮影後は二次会会場へご案内いたします',
+    instruction: '記念撮影を持って本日予定されているプログラムは全て終了となります。',
     notes: '기념사진 촬영입니다. 참가자들을 무대 앞으로 안내합니다.',
   },
   // 18. 閉会
