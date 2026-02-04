@@ -3,6 +3,68 @@ import SlideWrapper from './SlideWrapper'
 
 const STORAGE_KEY = 'keio_luckydraw_settings'
 
+// 기본 참가자 목록
+const DEFAULT_PARTICIPANTS = [
+  'チョ・ヘナ',
+  'ユ・ヒョク',
+  'チョン・ソクグン',
+  'チェ・ジェフン',
+  'キム・ソニョン',
+  '長谷川湧一',
+  '木浦岬大',
+  '伊藤 光',
+  '中島幸一',
+  '宮崎能成',
+  '長島一平',
+  '高瀬 勇',
+  '山崎裕二',
+  '大坪克英',
+  '大坪英泰',
+  '西園 壽元',
+  'ノ・ミリム',
+  'イム・ジュンソプ',
+  'パク・ジュニョン',
+  'イ・ソギョン',
+  'チャン・ジェグク',
+  'チョン・ソンファン',
+  'キム・ミンジュ',
+  'ソ・ジュンボム',
+  'キム・スジン',
+  'ソ・ジヌク',
+  'パク・ミヌ',
+  'ソン・ギヒ',
+  'ソ・ウィソク',
+  'イ・イルギュ',
+  'チョン・ユジン',
+  'イ・ホンチョン',
+  'チョン・ユンソン',
+  'キム・ヘリ',
+  'キム・サンリム',
+  'チョン・ソンファン',
+  'イ・ジョンソプ',
+  'イ・ミンゴル',
+  'キム・ジェヒ',
+  'チョン・ヨヌ',
+  'キルガン・ジフィ・ヨシオカ',
+  'ヤン・ヨンジュン',
+  'チェ・スンイル',
+  'ク・ダヨン',
+  'キム・ウジュ',
+  'パク・ウジン',
+  'キム・ヒョジュン',
+  'クォン・ヨンヒョン',
+  'チ・ヨンヒ',
+  'クォン・ジュンギョム',
+  'ハン・ウヨン',
+  'カン・ジウ',
+  'パク・ジュビン',
+  'シン・ユンソ',
+  'キム・ミンソ',
+  'キム・ジョンヒョン',
+  'ヤスハラ・ナオマサ',
+  'イ・ダヨン',
+]
+
 // 드럼롤 MP3 사운드 훅
 const useSound = () => {
   const audioRef = useRef(null)
@@ -30,9 +92,11 @@ const useSound = () => {
 // 설정 팝업 컴포넌트
 const SettingsPopup = ({ isOpen, onClose, settings, onSave }) => {
   const [localSettings, setLocalSettings] = useState(settings)
+  const [participantsText, setParticipantsText] = useState('')
 
   useEffect(() => {
     setLocalSettings(settings)
+    setParticipantsText(settings.participants?.join('\n') || '')
   }, [settings, isOpen])
 
   const handleAddPrize = () => {
@@ -57,7 +121,16 @@ const SettingsPopup = ({ isOpen, onClose, settings, onSave }) => {
   }
 
   const handleSave = () => {
-    onSave(localSettings)
+    // 참가자 텍스트를 배열로 변환 (빈 줄 제거, 앞뒤 공백 제거)
+    const participants = participantsText
+      .split('\n')
+      .map(name => name.trim())
+      .filter(name => name.length > 0)
+
+    onSave({
+      ...localSettings,
+      participants
+    })
     onClose()
   }
 
@@ -92,34 +165,23 @@ const SettingsPopup = ({ isOpen, onClose, settings, onSave }) => {
         </div>
 
         <div className="p-6 space-y-8">
-          {/* 번호 범위 설정 */}
+          {/* 참가자 명단 */}
           <div>
             <h4 className="text-lg font-medium text-keio-yellow mb-4 flex items-center gap-2">
-              <span>🎫</span> 抽選番号範囲
+              <span>👥</span> 参加者リスト
+              <span className="text-sm text-white/50 font-normal ml-2">
+                ({participantsText.split('\n').filter(n => n.trim()).length}名)
+              </span>
             </h4>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <label className="text-white/70">開始:</label>
-                <input
-                  type="number"
-                  min="1"
-                  value={localSettings.minNumber}
-                  onChange={(e) => setLocalSettings(prev => ({ ...prev, minNumber: e.target.value }))}
-                  className="w-24 px-4 py-2 text-lg text-center rounded-lg bg-white/10 border border-white/20 text-white focus:outline-none focus:border-keio-yellow"
-                />
-              </div>
-              <span className="text-white/50">〜</span>
-              <div className="flex items-center gap-2">
-                <label className="text-white/70">終了:</label>
-                <input
-                  type="number"
-                  min="1"
-                  value={localSettings.maxNumber}
-                  onChange={(e) => setLocalSettings(prev => ({ ...prev, maxNumber: e.target.value }))}
-                  className="w-24 px-4 py-2 text-lg text-center rounded-lg bg-white/10 border border-white/20 text-white focus:outline-none focus:border-keio-yellow"
-                />
-              </div>
-            </div>
+            <textarea
+              value={participantsText}
+              onChange={(e) => setParticipantsText(e.target.value)}
+              placeholder="1行に1名ずつ入力してください&#10;例:&#10;山田太郎&#10;田中花子&#10;鈴木一郎"
+              className="w-full h-48 px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/30 focus:outline-none focus:border-keio-yellow resize-none"
+            />
+            <p className="mt-2 text-white/50 text-sm">
+              ※ 1行に1名ずつ入力してください
+            </p>
           </div>
 
           {/* 상품 테이블 */}
@@ -138,7 +200,7 @@ const SettingsPopup = ({ isOpen, onClose, settings, onSave }) => {
 
             {/* 상품 목록 */}
             <div className="space-y-2">
-              {localSettings.prizes.map((prize, idx) => (
+              {localSettings.prizes.map((prize) => (
                 <div
                   key={prize.id}
                   className="grid grid-cols-[1fr_80px_1fr_40px] gap-2 items-center p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
@@ -212,8 +274,7 @@ const SettingsPopup = ({ isOpen, onClose, settings, onSave }) => {
 const PrizeSlide = ({ index, data }) => {
   // 설정 상태
   const [settings, setSettings] = useState({
-    minNumber: '1',
-    maxNumber: '50',
+    participants: DEFAULT_PARTICIPANTS,
     prizes: []
   })
   const [showSettings, setShowSettings] = useState(false)
@@ -222,7 +283,7 @@ const PrizeSlide = ({ index, data }) => {
   // 추첨 상태
   const [drawCount, setDrawCount] = useState(1)
   const [excludeDuplicates, setExcludeDuplicates] = useState(true)
-  const [drawnNumbers, setDrawnNumbers] = useState([])
+  const [drawnNames, setDrawnNames] = useState([])
   const [currentDrawn, setCurrentDrawn] = useState([])
   const [isDrawing, setIsDrawing] = useState(false)
   const [showCelebration, setShowCelebration] = useState(false)
@@ -232,7 +293,7 @@ const PrizeSlide = ({ index, data }) => {
   const [drawHistory, setDrawHistory] = useState([])
 
   // 애니메이션 상태
-  const [rollingNumbers, setRollingNumbers] = useState([])
+  const [rollingNames, setRollingNames] = useState([])
   const [rollPhase, setRollPhase] = useState('idle')
 
   // 사운드 훅
@@ -244,14 +305,19 @@ const PrizeSlide = ({ index, data }) => {
     if (saved) {
       try {
         const parsed = JSON.parse(saved)
-        setSettings(parsed)
-        // 설정이 있으면 바로 추첨 화면으로
-        if (parsed.maxNumber && parseInt(parsed.maxNumber) > 0) {
-          setIsSetupComplete(true)
+        // 저장된 참가자 목록이 비어있으면 기본값 사용
+        if (!parsed.participants || parsed.participants.length === 0) {
+          parsed.participants = DEFAULT_PARTICIPANTS
         }
+        setSettings(parsed)
+        setIsSetupComplete(true)
       } catch (e) {
         console.error('Failed to parse saved settings:', e)
+        setIsSetupComplete(true)
       }
+    } else {
+      // 저장된 설정이 없으면 기본 참가자 목록 사용
+      setIsSetupComplete(true)
     }
   }, [])
 
@@ -259,21 +325,19 @@ const PrizeSlide = ({ index, data }) => {
   const handleSaveSettings = (newSettings) => {
     setSettings(newSettings)
     localStorage.setItem(STORAGE_KEY, JSON.stringify(newSettings))
-    if (newSettings.maxNumber && parseInt(newSettings.maxNumber) > 0) {
+    if (newSettings.participants && newSettings.participants.length > 0) {
       setIsSetupComplete(true)
     }
   }
 
-  // 추첨 가능한 번호 계산
-  const getAvailableNumbers = useCallback(() => {
-    const min = parseInt(settings.minNumber) || 1
-    const max = parseInt(settings.maxNumber) || 1
-    const all = Array.from({ length: max - min + 1 }, (_, i) => min + i)
+  // 추첨 가능한 참가자 계산
+  const getAvailableParticipants = useCallback(() => {
+    const all = settings.participants || []
     if (excludeDuplicates) {
-      return all.filter(n => !drawnNumbers.includes(n))
+      return all.filter(name => !drawnNames.includes(name))
     }
     return all
-  }, [settings.minNumber, settings.maxNumber, drawnNumbers, excludeDuplicates])
+  }, [settings.participants, drawnNames, excludeDuplicates])
 
   // 남은 상품 목록 (추첨되지 않은 것만)
   const getAvailablePrizes = useCallback(() => {
@@ -283,12 +347,12 @@ const PrizeSlide = ({ index, data }) => {
 
   // 추첨 실행
   const handleDraw = () => {
-    const available = getAvailableNumbers()
+    const available = getAvailableParticipants()
     const selectedPrize = settings.prizes.find(p => p.id === selectedPrizeId)
     const count = selectedPrize ? Math.min(selectedPrize.quantity, available.length) : Math.min(drawCount, available.length)
 
     if (count === 0) {
-      alert('抽選可能な番号がありません！')
+      alert('抽選可能な参加者がいません！')
       return
     }
 
@@ -304,8 +368,7 @@ const PrizeSlide = ({ index, data }) => {
     const shuffled = [...available].sort(() => Math.random() - 0.5)
     const winners = shuffled.slice(0, count)
 
-    const max = parseInt(settings.maxNumber) || 1
-    const min = parseInt(settings.minNumber) || 1
+    const allParticipants = settings.participants || []
     const startTime = Date.now()
     const totalDuration = 4000
 
@@ -313,10 +376,11 @@ const PrizeSlide = ({ index, data }) => {
       const elapsed = Date.now() - startTime
       const progress = elapsed / totalDuration
 
+      // 랜덤 이름 롤링
       const randomRolling = Array.from({ length: count }, () =>
-        Math.floor(Math.random() * (max - min + 1)) + min
+        allParticipants[Math.floor(Math.random() * allParticipants.length)]
       )
-      setRollingNumbers(randomRolling)
+      setRollingNames(randomRolling)
 
       if (progress < 0.6) {
         setRollPhase('fast')
@@ -327,14 +391,14 @@ const PrizeSlide = ({ index, data }) => {
       if (elapsed >= totalDuration) {
         setRollPhase('reveal')
         setCurrentDrawn(winners)
-        setDrawnNumbers(prev => [...prev, ...winners])
+        setDrawnNames(prev => [...prev, ...winners])
         setDrawHistory(prev => [...prev, {
           prizeId: selectedPrizeId,
           prizeName: selectedPrize?.name || '景品',
           sponsor: selectedPrize?.sponsor || '',
-          numbers: winners
+          winners: winners
         }])
-        setRollingNumbers([])
+        setRollingNames([])
         setIsDrawing(false)
         setShowCelebration(true)
         setSelectedPrizeId(null)
@@ -356,7 +420,7 @@ const PrizeSlide = ({ index, data }) => {
   const handleReset = () => {
     if (window.confirm('本当に最初からやり直しますか？\n抽選履歴がすべてリセットされます。')) {
       stopSound()
-      setDrawnNumbers([])
+      setDrawnNames([])
       setCurrentDrawn([])
       setShowCelebration(false)
       setDrawCount(1)
@@ -370,6 +434,7 @@ const PrizeSlide = ({ index, data }) => {
   }
 
   const availablePrizes = getAvailablePrizes()
+  const availableParticipants = getAvailableParticipants()
 
   return (
     <SlideWrapper index={index}>
@@ -437,18 +502,18 @@ const PrizeSlide = ({ index, data }) => {
             </button>
           </div>
         ) : (
-          /* 추첨 화면 - 2열 구조 */
+          /* 추첨 화면 - 3열 구조 */
           <div data-animate className="space-y-4">
             {/* 현재 상태 표시 */}
             <div className="flex flex-wrap justify-center gap-3 text-white/70 text-sm">
               <span className="px-3 py-1.5 rounded-full bg-white/10">
-                番号: {settings.minNumber}〜{settings.maxNumber}
+                参加者: {settings.participants?.length || 0}名
               </span>
               <span className="px-3 py-1.5 rounded-full bg-white/10">
-                抽選済: {drawnNumbers.length}名
+                当選済: {drawnNames.length}名
               </span>
               <span className="px-3 py-1.5 rounded-full bg-white/10">
-                残り: {getAvailableNumbers().length}名
+                残り: {availableParticipants.length}名
               </span>
               {settings.prizes.length > 0 && (
                 <span className="px-3 py-1.5 rounded-full bg-white/10">
@@ -509,7 +574,7 @@ const PrizeSlide = ({ index, data }) => {
                         <input
                           type="number"
                           min="1"
-                          max={getAvailableNumbers().length}
+                          max={availableParticipants.length}
                           value={drawCount}
                           onChange={(e) => setDrawCount(Math.max(1, parseInt(e.target.value) || 1))}
                           className="w-20 px-3 py-2 text-center rounded-lg bg-white/10 border border-white/20 text-white focus:outline-none focus:border-keio-yellow"
@@ -528,7 +593,7 @@ const PrizeSlide = ({ index, data }) => {
                         onChange={(e) => setExcludeDuplicates(e.target.checked)}
                         className="w-4 h-4 rounded accent-keio-yellow"
                       />
-                      <span className="text-white/80">当選済み番号を除外</span>
+                      <span className="text-white/80">当選済みを除外</span>
                     </label>
                   </div>
 
@@ -536,7 +601,7 @@ const PrizeSlide = ({ index, data }) => {
                   <div className="space-y-2">
                     <button
                       onClick={handleDraw}
-                      disabled={isDrawing || getAvailableNumbers().length === 0 || (settings.prizes.length > 0 && !selectedPrizeId)}
+                      disabled={isDrawing || availableParticipants.length === 0 || (settings.prizes.length > 0 && !selectedPrizeId)}
                       className="w-full py-3 text-lg font-bold rounded-xl bg-gradient-to-r from-red-500 to-pink-500 text-white hover:scale-105 transition-all shadow-lg shadow-red-500/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                     >
                       {isDrawing ? '🎰 抽選中...' : '🎲 抽選開始！'}
@@ -578,7 +643,7 @@ const PrizeSlide = ({ index, data }) => {
                         ? `🎰 ${currentPrizeName} 抽選中...`
                         : `🥁 ${currentPrizeName} まもなく発表...`
                       : currentDrawn.length > 0
-                        ? `🎉 ${currentPrizeName} 当選番号`
+                        ? `🎉 ${currentPrizeName} 当選者`
                         : '抽選結果がここに表示されます'}
                   </h4>
                   {currentSponsor && !isDrawing && currentDrawn.length > 0 && (
@@ -587,12 +652,12 @@ const PrizeSlide = ({ index, data }) => {
 
                   <div className="flex-1 flex items-center justify-center">
                     <div className="flex flex-wrap justify-center gap-4">
-                      {(isDrawing ? rollingNumbers : currentDrawn).map((num, idx) => (
+                      {(isDrawing ? rollingNames : currentDrawn).map((name, idx) => (
                         <div
                           key={idx}
                           className={`
-                            w-24 h-24 md:w-28 md:h-28 rounded-2xl flex items-center justify-center
-                            text-4xl md:text-5xl font-bold transition-all
+                            px-6 py-4 md:px-8 md:py-5 rounded-2xl flex items-center justify-center
+                            text-xl md:text-2xl font-bold transition-all min-w-[120px]
                             ${isDrawing
                               ? rollPhase === 'slow'
                                 ? 'bg-yellow-500/30 text-yellow-300 scale-110'
@@ -601,7 +666,7 @@ const PrizeSlide = ({ index, data }) => {
                             }
                           `}
                         >
-                          {num}
+                          {name}
                         </div>
                       ))}
                     </div>
@@ -626,12 +691,12 @@ const PrizeSlide = ({ index, data }) => {
                             {draw.prizeName}
                           </div>
                           <div className="flex flex-wrap gap-1">
-                            {draw.numbers.map((num, numIdx) => (
+                            {draw.winners.map((name, nameIdx) => (
                               <span
-                                key={numIdx}
+                                key={nameIdx}
                                 className="px-2 py-0.5 rounded-full bg-white/10 text-white text-xs"
                               >
-                                {num}
+                                {name}
                               </span>
                             ))}
                           </div>
