@@ -216,7 +216,7 @@ export const slidesData = [
     id: 'closing-speech',
     type: 'speech',
     title: '閉会の辞',
-    speaker: '代表者名',
+    speaker: '高瀬 勇',
     message: '本日は韓国・ソウル三田会合同新年会に\nご参加いただき、誠にありがとうございました。',
     notes: '폐회사입니다. 대표자가 감사 인사를 전합니다.',
   },
