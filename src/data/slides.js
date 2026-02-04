@@ -99,7 +99,7 @@ export const slidesData = [
     title: 'スポンサー紹介',
     subtitle: '本日の新年会を支援してくださった方々',
     sponsorName: '辛裕烈（シン・ユヨル）',
-    graduation: '商学部卒業（2008）',
+    graduation: '商学部卒業',
     logo: '/images/lotte_logo.webp',
     positions: [
       '現 ロッテホールディングス 未来成長室長 副社長',
