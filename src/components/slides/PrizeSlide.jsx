@@ -3,13 +3,29 @@ import SlideWrapper from './SlideWrapper'
 
 const STORAGE_KEY = 'keio_luckydraw_settings'
 
+// 기본 경품 목록
+const DEFAULT_PRIZES = [
+  { id: 1, name: '本人著書', quantity: 1, sponsor: 'ノ・ミリム' },
+  { id: 2, name: '日本カップラーメン 1ケース', quantity: 1, sponsor: '宮崎 能成' },
+  { id: 3, name: '百貨店10万ウォン商品券', quantity: 2, sponsor: 'キム・スジン' },
+  { id: 4, name: 'お酒（日本酒またはウイスキー等）1本', quantity: 1, sponsor: '中島 幸一' },
+  { id: 5, name: 'ワイン 1本 5万ウォン', quantity: 1, sponsor: '高瀬 勇' },
+  { id: 6, name: 'ゴルフボール 1ダース', quantity: 1, sponsor: '山崎 裕二' },
+  { id: 7, name: '末廣酒造 大吟醸 1本', quantity: 1, sponsor: '大坪 克英' },
+  { id: 8, name: 'トゥブガク 1箱（焼き豆腐菓子）', quantity: 1, sponsor: 'ソン・ギヒ' },
+  { id: 9, name: 'ソラリア西鉄ホテルソウル明洞 1泊宿泊券（朝食付き）', quantity: 1, sponsor: '西園 壽元' },
+  { id: 10, name: 'スターバックスコーヒーチケット 1万ウォン券', quantity: 1, sponsor: '角舘 一輝' },
+  { id: 11, name: 'ワイン 1本（キム・デシク国会議員贈呈）', quantity: 1, sponsor: 'ハ・ドギュ' },
+  { id: 12, name: 'ワイン 1本（カナダ産）', quantity: 1, sponsor: 'パク・ジュンヨン' },
+]
+
 // 기본 참가자 목록
 const DEFAULT_PARTICIPANTS = [
   'チョ・ヘナ',
   'ユ・ヒョク',
   'チョン・ソクグン',
   'チェ・ジェフン',
-  'キム・ソニョン',
+  'キム・ソンヨン',
   '長谷川湧一',
   '木浦岬大',
   '伊藤 光',
@@ -22,16 +38,16 @@ const DEFAULT_PARTICIPANTS = [
   '大坪英泰',
   '西園 壽元',
   'ノ・ミリム',
-  'イム・ジュンソプ',
-  'パク・ジュニョン',
-  'イ・ソギョン',
+  'イム・ジュンソップ',
+  'パク・ジュンヨン',
+  'イ・ソクヨン',
   'チャン・ジェグク',
   'チョン・ソンファン',
   'キム・ミンジュ',
   'ソ・ジュンボム',
   'キム・スジン',
-  'ソ・ジヌク',
-  'パク・ミヌ',
+  'ソ・ジンウック',
+  'パク・ミンウ',
   'ソン・ギヒ',
   'ソ・ウィソク',
   'イ・イルギュ',
@@ -41,10 +57,10 @@ const DEFAULT_PARTICIPANTS = [
   'キム・ヘリ',
   'キム・サンリム',
   'チョン・ソンファン',
-  'イ・ジョンソプ',
+  'イ・ジョンソップ',
   'イ・ミンゴル',
   'キム・ジェヒ',
-  'チョン・ヨヌ',
+  'チョン・ヨンウ',
   'キルガン・ジフィ・ヨシオカ',
   'ヤン・ヨンジュン',
   'チェ・スンイル',
@@ -275,7 +291,7 @@ const PrizeSlide = ({ index, data }) => {
   // 설정 상태
   const [settings, setSettings] = useState({
     participants: DEFAULT_PARTICIPANTS,
-    prizes: []
+    prizes: DEFAULT_PRIZES
   })
   const [showSettings, setShowSettings] = useState(false)
   const [isSetupComplete, setIsSetupComplete] = useState(false)
@@ -309,6 +325,10 @@ const PrizeSlide = ({ index, data }) => {
         if (!parsed.participants || parsed.participants.length === 0) {
           parsed.participants = DEFAULT_PARTICIPANTS
         }
+        // 저장된 경품 목록이 비어있으면 기본값 사용
+        if (!parsed.prizes || parsed.prizes.length === 0) {
+          parsed.prizes = DEFAULT_PRIZES
+        }
         setSettings(parsed)
         setIsSetupComplete(true)
       } catch (e) {
@@ -316,7 +336,7 @@ const PrizeSlide = ({ index, data }) => {
         setIsSetupComplete(true)
       }
     } else {
-      // 저장된 설정이 없으면 기본 참가자 목록 사용
+      // 저장된 설정이 없으면 기본값 사용
       setIsSetupComplete(true)
     }
   }, [])
