@@ -33,15 +33,6 @@ const extractYoutubeInfo = (url) => {
   return null
 }
 
-// YouTube embed URL 생성
-const getEmbedUrl = (track) => {
-  if (track.isPlaylistFallback) {
-    // 플레이리스트 폴백: 전체 재생
-    return `https://www.youtube.com/embed/videoseries?list=${track.youtubeId}&autoplay=1&rel=0`
-  }
-  return `https://www.youtube.com/embed/${track.youtubeId}?autoplay=1&rel=0`
-}
-
 // JSON 객체의 끝을 찾는 함수 (브라켓 매칭)
 const findJsonEnd = (str, startIndex) => {
   let depth = 0
@@ -81,9 +72,13 @@ const findJsonEnd = (str, startIndex) => {
 // 플레이리스트에서 개별 영상 목록 가져오기
 const fetchPlaylistVideos = async (playlistId) => {
   try {
-    // CORS 프록시를 통해 플레이리스트 페이지 가져오기
+    // CORS 프록시를 통해 플레이리스트 페이지 가져오기 (10초 타임아웃)
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 10000)
+
     const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(`https://www.youtube.com/playlist?list=${playlistId}`)}`
-    const response = await fetch(proxyUrl)
+    const response = await fetch(proxyUrl, { signal: controller.signal })
+    clearTimeout(timeoutId)
     const data = await response.json()
 
     if (!data.contents) return []
@@ -201,7 +196,7 @@ const defaultPlaylist = [
   {
     id: 1,
     title: 'YouTube Playlist',
-    album: '読み込み中...',
+    album: '連続再生',
     youtubeId: DEFAULT_PLAYLIST_ID,
     isPlaylistFallback: true,
   },
@@ -215,19 +210,202 @@ const OpeningSlide = () => {
   const [customUrl, setCustomUrl] = useState('')
   const [playlist, setPlaylist] = useState(defaultPlaylist)
   const [isLoading, setIsLoading] = useState(false)
-  const iframeRef = useRef(null)
+  const [ytReady, setYtReady] = useState(false)
+  const playerRef = useRef(null)
+  const playerContainerRef = useRef(null)
+  const currentTrackRef = useRef(currentTrack)
+  const playlistRef = useRef(playlist)
 
-  // 컴포넌트 마운트 시 기본 플레이리스트 로드
+  // Refs 동기화
+  useEffect(() => { currentTrackRef.current = currentTrack }, [currentTrack])
+  useEffect(() => { playlistRef.current = playlist }, [playlist])
+
+  // YouTube IFrame API 로드
   useEffect(() => {
+    if (window.YT && window.YT.Player) {
+      setYtReady(true)
+      return
+    }
+
+    const prevCallback = window.onYouTubeIframeAPIReady
+    window.onYouTubeIframeAPIReady = () => {
+      if (prevCallback) prevCallback()
+      setYtReady(true)
+    }
+
+    if (!document.querySelector('script[src*="youtube.com/iframe_api"]')) {
+      const tag = document.createElement('script')
+      tag.src = 'https://www.youtube.com/iframe_api'
+      document.head.appendChild(tag)
+    }
+  }, [])
+
+  // YouTube API 준비 후 기본 플레이리스트 로드
+  useEffect(() => {
+    if (!ytReady) return
+    // 이미 개별 트랙이 로드되어 있으면 스킵
+    const current = playlistRef.current
+    if (current.length > 1 || (current.length === 1 && !current[0].isPlaylistFallback)) return
+
     const loadDefaultPlaylist = async () => {
       setIsLoading(true)
-      const videos = await fetchPlaylistVideos(DEFAULT_PLAYLIST_ID)
-      if (videos.length > 0) {
-        setPlaylist(videos)
+      try {
+        // YouTube IFrame API로 플레이리스트 영상 ID 가져오기
+        const videoIds = await new Promise((resolve) => {
+          const container = document.createElement('div')
+          container.style.cssText = 'position:absolute;left:-9999px;width:1px;height:1px'
+          document.body.appendChild(container)
+
+          let resolved = false
+          let checker = null
+          const finish = (ids, player) => {
+            if (resolved) return
+            resolved = true
+            clearTimeout(timeout)
+            if (checker) clearInterval(checker)
+            try { player.destroy() } catch (e) { /* ignore */ }
+            container.remove()
+            resolve(ids)
+          }
+
+          const timeout = setTimeout(() => {
+            finish([], tempPlayer)
+          }, 15000)
+
+          const tempPlayer = new window.YT.Player(container, {
+            width: 1, height: 1,
+            playerVars: { listType: 'playlist', list: DEFAULT_PLAYLIST_ID },
+            events: {
+              onReady: (event) => {
+                checker = setInterval(() => {
+                  const ids = event.target.getPlaylist()
+                  if (ids && ids.length > 0) {
+                    finish(ids, event.target)
+                  }
+                }, 500)
+              },
+              onError: () => finish([], tempPlayer)
+            }
+          })
+        })
+
+        if (videoIds.length > 0) {
+          // noembed로 각 영상 제목 가져오기
+          const tracks = await Promise.all(videoIds.map(async (id, idx) => {
+            try {
+              const controller = new AbortController()
+              const t = setTimeout(() => controller.abort(), 5000)
+              const resp = await fetch(
+                `https://noembed.com/embed?url=https://www.youtube.com/watch?v=${id}`,
+                { signal: controller.signal }
+              )
+              clearTimeout(t)
+              const data = await resp.json()
+              return {
+                id: Date.now() + idx,
+                title: data.title || `Track ${idx + 1}`,
+                album: data.author_name || 'YouTube',
+                youtubeId: id,
+              }
+            } catch {
+              return {
+                id: Date.now() + idx,
+                title: `Track ${idx + 1}`,
+                album: 'YouTube',
+                youtubeId: id,
+              }
+            }
+          }))
+          setPlaylist(tracks)
+        }
+      } catch (e) {
+        console.error('Failed to load playlist:', e)
       }
       setIsLoading(false)
     }
+
     loadDefaultPlaylist()
+  }, [ytReady])
+
+  // YouTube Player 생성/업데이트 (자동 다음 곡 전환 포함)
+  useEffect(() => {
+    if (!ytReady) return
+
+    const destroyPlayer = () => {
+      if (playerRef.current) {
+        try { playerRef.current.destroy() } catch (e) { /* ignore */ }
+        playerRef.current = null
+      }
+    }
+
+    if (!isPlaying) {
+      destroyPlayer()
+      return
+    }
+
+    const track = playlistRef.current[currentTrack]
+    if (!track) {
+      destroyPlayer()
+      return
+    }
+
+    destroyPlayer()
+
+    const container = playerContainerRef.current
+    if (!container) return
+    container.innerHTML = ''
+    const playerDiv = document.createElement('div')
+    container.appendChild(playerDiv)
+
+    const config = {
+      width: 1,
+      height: 1,
+      playerVars: {
+        autoplay: 1,
+        rel: 0,
+      },
+      events: {
+        onStateChange: (event) => {
+          if (event.data === window.YT.PlayerState.ENDED) {
+            const ct = currentTrackRef.current
+            const pl = playlistRef.current
+            if (ct < pl.length - 1) {
+              setCurrentTrack(ct + 1)
+            } else {
+              // 마지막 곡이면 정지
+              setIsPlaying(false)
+            }
+          }
+        },
+        onError: () => {
+          // 에러 시 다음 곡으로
+          const ct = currentTrackRef.current
+          const pl = playlistRef.current
+          if (ct < pl.length - 1) {
+            setCurrentTrack(ct + 1)
+          }
+        }
+      }
+    }
+
+    if (track.isPlaylistFallback) {
+      config.playerVars.listType = 'playlist'
+      config.playerVars.list = track.youtubeId
+    } else {
+      config.videoId = track.youtubeId
+    }
+
+    playerRef.current = new window.YT.Player(playerDiv, config)
+  }, [ytReady, isPlaying, currentTrack])
+
+  // 컴포넌트 언마운트 시 정리
+  useEffect(() => {
+    return () => {
+      if (playerRef.current) {
+        try { playerRef.current.destroy() } catch (e) { /* ignore */ }
+        playerRef.current = null
+      }
+    }
   }, [])
 
   const handlePlayTrack = (idx) => {
@@ -377,17 +555,8 @@ const OpeningSlide = () => {
           </svg>
         </button>
 
-        {/* YouTube 플레이어 - 숨김 (패널 닫아도 재생 유지) */}
-        {isPlaying && playlist[currentTrack] && (
-          <div className="absolute -left-[9999px] w-1 h-1 overflow-hidden">
-            <iframe
-              ref={iframeRef}
-              src={getEmbedUrl(playlist[currentTrack])}
-              title={playlist[currentTrack].title}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            />
-          </div>
-        )}
+        {/* YouTube 플레이어 컨테이너 - 숨김 (자동 다음 곡 전환) */}
+        <div ref={playerContainerRef} className="absolute -left-[9999px] w-1 h-1 overflow-hidden" />
 
         {/* 플레이어 패널 */}
         {showPlayer && (
